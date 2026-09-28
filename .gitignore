@@ -8,3 +8,81 @@ tags
 cscope.out
 pandora/linux
 tools/generate_cc_lut
+
+# --- PopGBA (Windows CE port, CE/) ---
+# Build outputs
+*.exe
+*.dll
+*.map
+.font-*
+
+# Developer notes are not published; only these documents are.
+*.md
+!/README.md
+!/.github/README.md
+!/CE/README.md
+!/CE/LICENSING.md
+
+# Game ROMs and BIOS images (never distributed)
+*.gba
+*.agb
+*.gbz
+*.bin
+*.zip
+*.7z
+
+# Save data, save states, screenshots
+*.srm
+*.sav
+*.state
+*.state.tmp
+Screenshots/
+
+# Runtime config and logs written next to AppMain.exe
+*.cfg
+*.log
+
+# Audio recordings used for sound-bug comparison (contain game audio)
+*.wav
+*.mp3
+
+# Assets that must never be committed (see CE/LICENSING.md)
+jptahoma.ttc
+*.ttc
+gx.dll
+
+# Mascot drawing sources (the build uses CE/icon/popgba_mascot.bmp)
+/CE/popgba_mascot_*.png
+
+# The app icon and the mascot bitmap in CE/icon/ are shipped
+!/CE/icon/*.ico
+!/CE/icon/*.bmp
+# ...and the one mascot PNG shown at the top of .github/README.md
+!/.github/images/popgba_mascot_C_osanpo_4x.png
+# ...and the README screenshots (see "Screenshots/" above: keep them even
+# on a case-insensitive checkout)
+!/.github/screenshots/
+!/.github/screenshots/*.png
+
+# Windows "downloaded from the internet" metadata (NTFS alternate data
+# streams that show up as real files under WSL)
+*:Zone.Identifier
+
+# Local tooling / IDE state
+.vs/
+.vscode/
+.idea/
+.claude/
+*.user
+*.suo
+*.sqlite
+
+# Backups
+*.bak
+*.orig
+*.tmp
+*~
+backup/
+backups/
+*_backup/
+*.pre-reparent-backup-*/

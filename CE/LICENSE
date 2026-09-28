@@ -1,0 +1,94 @@
+PopGBA - License
+================
+
+PopGBA is an unofficial port of the gpSP Game Boy Advance emulator
+(libretro edition) to the SHARP Brain PW-G5200 (Windows CE, ARM). Its
+license has two levels.
+
+1. PopGBA as a whole: the GNU GPL, version 2 (same terms as upstream)
+----------------------------------------------------------------------
+
+PopGBA as a whole (AppMain.exe, and the source published in this
+repository) is distributed under the GNU General Public License,
+version 2 (GPL-2.0), on the same terms as upstream gpSP. The full text
+of the GPL version 2 is in COPYING at the repository root.
+
+This file does not state whether a later version of the GPL may also
+be chosen: the upstream files are not consistent about it. Many gpSP
+sources (main.c, section 3 below, among them) say "version 2 of the
+License, or (at your option) any later version", but some files built
+into AppMain.exe carry no license notice of their own (for example
+memmap.c, gba_cc_lut.c, bios_data.S, gpsp_config.h, gba_over.h,
+libretro/libretro.c and libretro/libretro_core_options.h), and
+upstream's README states no license. See CE/LICENSING.md, section 1.
+
+The GPL allows redistribution, including commercial use, on its terms:
+keep the license and the copyright notices, make the corresponding
+source available with any binary, and keep derived works as a whole
+under the GPL. There is no warranty.
+
+2. PopGBA's own code: MIT
+----------------------------------------------------------------------
+
+This MIT license covers only PopGBA's own code listed in
+CE/LICENSING.md (the files marked "SPDX-License-Identifier: MIT": the
+CE/ frontend except the font data, the mascot image and the icon).
+PopGBA as a whole is distributed under the GPL (section 1).
+
+Copyright (c) 2026 daizu-coder
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+The mascot images (CE/icon/popgba_mascot.bmp and
+.github/images/popgba_mascot_C_osanpo_4x.png) and the app icon
+(CE/icon/popgba.ico) are not covered by this MIT license: they are
+dedicated to the public domain under CC0 1.0
+(https://creativecommons.org/publicdomain/zero/1.0/).
+
+The font data (CE/ce_shinonome16.h, CE/ce_galmuri14.h,
+CE/ce_galmuri11.h) is not covered by this MIT license either; see
+CE/THIRDPARTY_LICENSES.txt.
+
+3. The gpSP license notice
+----------------------------------------------------------------------
+
+The following notice is the one at the top of gpSP's main.c; some of
+the other core sources carry no notice of their own (see section 1).
+No game ROMs, no Nintendo GBA BIOS and no other Nintendo copyrighted
+material are included in or required by this repository.
+
+----------------------------------------------------------------------
+gameplaySP
+
+Copyright (C) 2006 Exophase <exophase@gmail.com>
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation; either version 2 of
+the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+----------------------------------------------------------------------
