@@ -244,6 +244,28 @@ typedef struct
   void platform_cache_sync(void *baseaddr, void *endptr) {
     ctr_flush_invalidate_cache();
   }
+#elif defined(__MINGW32CE__)
+  /* PopGBA (SHARP Brain PW-G5200 / Windows CE): upstream's ARM_ARCH branch
+   * calls __clear_cache(), but cegcc's arm-mingw32ce libgcc ships that as a
+   * bare "bx lr" no-op (verified with nm/objdump), so
+   * JIT-emitted code would run with a stale I-cache: crashes / garbage that
+   * look like codegen bugs but are pure cache incoherency.
+   *
+   * CacheSync() is WinCE's own D+I cache-maintenance API.  It has no cegcc
+   * header prototype and CACHE_SYNC_ALL is absent, so both are declared
+   * here, but the symbol IS a real export of this toolchain's libcoredll
+   * (nm shows `T CacheSync` / `I __imp_CacheSync`).  CacheSync() takes no
+   * range - it is a whole-cache sync - so baseaddr/endptr are ignored.
+   * A range-limited variant via CacheRangeFlush was tried on hardware and
+   * reverted; the whole-cache sync is the proven path. */
+  #ifndef CACHE_SYNC_ALL
+  #define CACHE_SYNC_ALL 0xFFFFFFFF
+  #endif
+  extern int __stdcall CacheSync(unsigned long dwFlags);
+  void platform_cache_sync(void *baseaddr, void *endptr) {
+    (void)baseaddr; (void)endptr;
+    CacheSync(CACHE_SYNC_ALL);
+  }
 #elif defined(ARM_ARCH) || defined(ARM64_ARCH)
   void platform_cache_sync(void *baseaddr, void *endptr) {
     __clear_cache(baseaddr, endptr);

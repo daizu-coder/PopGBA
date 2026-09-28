@@ -1,9 +1,17 @@
 
 #include "../gpsp_config.h"
 
+/* PopGBA (cegcc/PE-COFF): the cegcc arm-mingw32ce assembler has no ELF
+ * .type/.size/%function/%nobits.  defsymbl drops ".type ... %function"
+ * (COFF has no equivalent and it is only debug metadata); the ".size"
+ * pseudo-ops elsewhere in this file are likewise removed, and the
+ * ".section .jit,\"awx\",%nobits" translation-cache block is folded into
+ * plain .bss (the PW-G5200 executes data pages; platform_cache_sync() /
+ * CacheSync handle I-cache coherency).
+ * The "_" underscore alias is kept: cegcc emits both decorated and
+ * undecorated externals. */
 #define defsymbl(symbol) \
 .align 2;                \
-.type symbol, %function ;\
 .global symbol ;         \
 .global _##symbol ;      \
 symbol:                  \
@@ -223,7 +231,7 @@ defsymbl(arm_update_gba_##name)                                              ;\
   call_c_function(block_lookup_address_thumb)                                ;\
   restore_flags()                                                            ;\
   bx r0                                   /* jump to new ARM block         */;\
-.size arm_update_gba_##name, .-arm_update_gba_##name
+@ .size elided (cegcc/PE-COFF has no ELF .size)
 
 arm_update_gba_builder(arm, arm, straight)
 arm_update_gba_builder(thumb, thumb, straight)
@@ -284,7 +292,7 @@ defsymbl(arm_indirect_branch_dual_arm)
   call_c_function(block_lookup_address_thumb)
   restore_flags()
   bx r0       
-.size arm_indirect_branch_dual_arm, .-arm_indirect_branch_dual_arm
+@ .size elided (cegcc/PE-COFF has no ELF .size)
 
 defsymbl(arm_indirect_branch_dual_thumb)
   save_flags()
@@ -303,7 +311,7 @@ defsymbl(arm_indirect_branch_dual_thumb)
   call_c_function(block_lookup_address_arm)
   restore_flags()
   bx r0
-.size arm_indirect_branch_dual_thumb, .-arm_indirect_branch_dual_thumb
+@ .size elided (cegcc/PE-COFF has no ELF .size)
 
 @ Update the cpsr.
 
@@ -341,7 +349,7 @@ defsymbl(execute_store_cpsr)
   call_c_function(block_lookup_address_arm)
   restore_flags()
   bx r0                                   @ return to PC ARM address
-.size execute_store_cpsr, .-execute_store_cpsr
+@ .size elided (cegcc/PE-COFF has no ELF .size)
 
 @ Restore the cpsr from the mode spsr and mode shift.
 
@@ -937,16 +945,20 @@ defsymbl(palette_ram_converted)
 @ platform-speficic mechanisms.
 #if !defined(MMAP_JIT_CACHE) && !defined(VITA) && !defined(_3DS)
 
-@ Make this section executable!
-.text
-.section .jit,"awx",%nobits
+@ PopGBA (cegcc/PE-COFF): upstream puts these in a custom
+@ .section .jit,"awx",%nobits so the loader marks them executable.  The
+@ cegcc assembler has no such syntax, and the PW-G5200 executes ordinary
+@ data pages anyway, so the translation caches go in
+@ plain .bss right after the core arrays above - which also keeps every
+@ exe<->cache and cache<->cache distance inside the JIT's branch range by
+@ construction.  I-cache coherency is handled by platform_cache_sync() /
+@ CacheSync (cpu_threaded.c).
+.bss
 .align 4
 defsymbl(rom_translation_cache)
   .space ROM_TRANSLATION_CACHE_SIZE
-.size rom_translation_cache, .-rom_translation_cache
 defsymbl(ram_translation_cache)
   .space RAM_TRANSLATION_CACHE_SIZE
-.size ram_translation_cache, .-ram_translation_cache
 
 #endif
 
