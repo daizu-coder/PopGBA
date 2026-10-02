@@ -34,7 +34,7 @@ PopGBA 全体は、上流の gpSP と同じ条件の GNU General Public License 
 
 「ゲームボーイアドバンス」「Game Boy Advance」「Nintendo」「任天堂」は任天堂の商標、「SHARP」「Brain」はシャープ株式会社の商標です。PopGBA は、これらの権利者とは関係ありません。
 
-ゲームの ROM と、ゲームボーイアドバンス本体の BIOS(`gba_bios.bin`)は同梱していません。
+ゲームの ROM と、ゲームボーイアドバンス本体の BIOS(`gba_bios.bin`)は同梱していません。BIOS を用意しなくても、ゲームは動きます。
 
 **使い方やビルドの説明は [CE/README.md](../CE/README.md)、ライセンスの詳しい説明は [CE/LICENSING.md](../CE/LICENSING.md) にあります。**
 
