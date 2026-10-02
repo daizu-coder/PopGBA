@@ -58,9 +58,9 @@ https://github.com/daizu-coder/PopGBA/releases/latest
 - `PopGBA_debug.log` は Video Config で「デバッグログを有効にする」を ON にしたときのみ生成されます(既定は OFF)
 - セーブデータ(`.srm`)とステートセーブ(`.state`)のファイルは、ROM と同じフォルダに作られます
 - BIOS
-  * ゲームの ROM と、ゲームボーイアドバンス本体の BIOS（任天堂の著作物）は同梱していません。BIOS を用意しなくても、ゲームは動きます。`AppMain.exe` の中に、オープンソースの代わりの BIOS が入っているためです。本物の BIOS を使うときは、ご自身で用意したものを `gba_bios.bin` という名前で置いてください（詳しくは [`LICENSING.md`](LICENSING.md)）
+  * ゲームの ROM と、ゲームボーイアドバンス本体の BIOS（任天堂の著作物）は同梱していません。BIOS を用意しなくても、ゲームは動きます。`AppMain.exe` の中に、オープンソースの BIOS が入っているためです。本物の BIOS を使うときは、ご自身で用意したものを `gba_bios.bin` という名前で置いてください（詳しくは [`LICENSING.md`](LICENSING.md)）
   * 置く場所は `AppMain.exe` と同じフォルダです。そこに無いときは、開いた ROM と同じフォルダも探します
-  * 見つからないときや、中身が正しくないときは、代わりの BIOS を使い
+  * 見つからないときや、中身が正しくないときは、オープンソースの BIOS を使い
     ます
 - ROM ファイル名・ROM を置くフォルダ名・`AppMain.exe` を置くフォルダ
   名・BIOS を置くフォルダ名は、いずれも日本語を含んでいても開けます
