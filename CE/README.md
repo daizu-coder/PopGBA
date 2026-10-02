@@ -20,10 +20,6 @@ electronic dictionary (Windows CE / ARM), built by wrapping the
   **MIT** です。詳細は [`LICENSE`](LICENSE)・[`COPYING`](../COPYING)・
   [`THIRDPARTY_LICENSES.txt`](THIRDPARTY_LICENSES.txt)・
   [`LICENSING.md`](LICENSING.md) を参照してください
-- ゲーム ROM・GBA 実機 BIOS（`gba_bios.bin`）は同梱していません。利用
-  者が合法的に用意したものを使用してください（BIOS が無い場合はオープン
-  ソースのフォールバック BIOS で起動しますが、実機 BIOS と完全に同一
-  動作は保証されません — 詳細は [`LICENSING.md`](LICENSING.md)）
 - SHARP・任天堂とは一切関係のない非公式のファンプロジェクトです
 - gpSP の公式版ではありません。gpSP の作者・メンテナーはこの移植に
   関わっていないので、不具合はこちらに報告してください
@@ -48,15 +44,8 @@ https://github.com/daizu-coder/PopGBA/releases/latest
 - `CE/AppMain.exe` を実機（PW-G5200）の任意のフォルダに配置してくだ
   さい
 - BIOS
-  * ゲームボーイアドバンス本体の BIOS（任天堂の著作物）は同梱して
-    いません。BIOS を用意しなくても、ゲームは動きます。`AppMain.exe`
-    の中に、オープンソースの代わりの BIOS（後述）が入っているため
-    です。別のファイルは要りません
-  * 代わりの BIOS では、本物の BIOS と動きが違うゲームがあるかも
-    しれません
-  * ご自身の本体から吸い出した本物の BIOS を使いたい場合は、ファイル
-    名を `gba_bios.bin` にして、`AppMain.exe` と同じフォルダに置いて
-    ください。そこに無いときは、開いた ROM と同じフォルダも探します
+  * ゲームの ROM と、ゲームボーイアドバンス本体の BIOS（任天堂の著作物）は同梱していません。BIOS を用意しなくても、ゲームは動きます。`AppMain.exe` の中に、オープンソースの代わりの BIOS が入っているためです。代わりの BIOS では、本物の BIOS と動きが違うゲームがあるかもしれません。本物の BIOS を使うときは、ご自身で用意したものを `gba_bios.bin` という名前で置いてください（詳しくは [`LICENSING.md`](LICENSING.md)）
+  * 置く場所は `AppMain.exe` と同じフォルダです。そこに無いときは、開いた ROM と同じフォルダも探します
   * 見つからないときや、中身が正しくないときは、代わりの BIOS を使い
     ます
 - ROM ファイル名・ROM を置くフォルダ名・`AppMain.exe` を置くフォルダ
