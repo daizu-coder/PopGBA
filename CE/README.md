@@ -20,6 +20,7 @@ electronic dictionary (Windows CE / ARM), built by wrapping the
   **MIT** です。詳細は [`LICENSE`](LICENSE)・[`COPYING`](../COPYING)・
   [`THIRDPARTY_LICENSES.txt`](THIRDPARTY_LICENSES.txt)・
   [`LICENSING.md`](LICENSING.md) を参照してください
+- ゲーム ROM・GBA 実機 BIOS（`gba_bios.bin`）は同梱していません。利用者が合法的に用意したものを使用してください。BIOS を用意しなくても、ゲームは動きます。
 - SHARP・任天堂とは一切関係のない非公式のファンプロジェクトです
 - gpSP の公式版ではありません。gpSP の作者・メンテナーはこの移植に
   関わっていないので、不具合はこちらに報告してください
@@ -41,16 +42,28 @@ https://github.com/daizu-coder/PopGBA/releases/latest
 
 ## 使用方法
 
-- `CE/AppMain.exe` を実機（PW-G5200）の任意のフォルダに配置してくだ
-  さい
+対象は SHARP Brain(PW-G5200 系)。PC にリムーバブルディスクとして接続し、ドライブ直下に次の構成を作ります(メニュー項目名は機種により異なる場合があります):
+
+```
+<ドライブ直下>/
+  アプリ/
+    <任意のアプリ名>/
+      AppMain.exe    ← ビルド生成物をそのまま
+      index.din      ← 中身は空でよいダミーファイル
+```
+
+- ROM ファイルは SD カード上に置いてください。アプリ内の「ROMを開く」から選べます
+- `index.din` をこの名前で置くと、そのフォルダが [追加アプリ・動画] に一覧表示されます
+- 設定ファイル `PopGBA.cfg` は初回起動時に同じフォルダへ自動生成されます。設定が無い状態での初回起動時の既定値は、UI 言語=日本語、デバッグログ=OFF、画面の表示倍率=x2 です
+- `PopGBA_debug.log` は Video Config で「デバッグログを有効にする」を ON にしたときのみ生成されます(既定は OFF)
+- セーブデータ(`.srm`)とステートセーブ(`.state`)のファイルは、ROM と同じフォルダに作られます
 - BIOS
-  * ゲームの ROM と、ゲームボーイアドバンス本体の BIOS（任天堂の著作物）は同梱していません。BIOS を用意しなくても、ゲームは動きます。`AppMain.exe` の中に、オープンソースの代わりの BIOS が入っているためです。代わりの BIOS では、本物の BIOS と動きが違うゲームがあるかもしれません。本物の BIOS を使うときは、ご自身で用意したものを `gba_bios.bin` という名前で置いてください（詳しくは [`LICENSING.md`](LICENSING.md)）
+  * ゲームの ROM と、ゲームボーイアドバンス本体の BIOS（任天堂の著作物）は同梱していません。BIOS を用意しなくても、ゲームは動きます。`AppMain.exe` の中に、オープンソースの代わりの BIOS が入っているためです。本物の BIOS を使うときは、ご自身で用意したものを `gba_bios.bin` という名前で置いてください（詳しくは [`LICENSING.md`](LICENSING.md)）
   * 置く場所は `AppMain.exe` と同じフォルダです。そこに無いときは、開いた ROM と同じフォルダも探します
   * 見つからないときや、中身が正しくないときは、代わりの BIOS を使い
     ます
 - ROM ファイル名・ROM を置くフォルダ名・`AppMain.exe` を置くフォルダ
   名・BIOS を置くフォルダ名は、いずれも日本語を含んでいても開けます
-  （ビルド確認済み、**実機未確認**）
 
 ## 動作確認環境
 
@@ -112,7 +125,3 @@ PopGBA は非公式のファンプロジェクトです。シャープ株式会�
 - 「SHARP」「Brain」はシャープ株式会社の商標です。
 - 「Game Boy Advance」「ゲームボーイアドバンス」「Nintendo」「任天堂」
   は任天堂の商標です。
-
-ゲーム ROM・BIOS イメージ（`gba_bios.bin`）・任天堂の著作物は一切
-含みません。ROM および BIOS は利用者が合法的に入手・用意したものを
-各自で使用してください。
