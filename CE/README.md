@@ -5,13 +5,13 @@ Copyright (c) 2026 daizu-coder
 
 # PopGBA
 
-PopGBA is a Game Boy Advance emulator for the **SHARP Brain PW-G5200**
+PopGBA is a Game Boy Advance emulator for the **SHARP Brain PW-G5300**
 electronic dictionary (Windows CE / ARM), built by wrapping the
 **gpSP** (gameplaySP) libretro core in a native Win32 frontend.
 
 ## 概要
 
-- SHARP の電子辞書 **Brain PW-G5200**（Windows CE / ARM）向けに、GBA エミュレータ **gpSP**（gameplaySP）の libretro コアをネイティブ Win32 フロントエンドで包んだ移植版です
+- SHARP の電子辞書 **Brain PW-G5300**（Windows CE / ARM）向けに、GBA エミュレータ **gpSP**（gameplaySP）の libretro コアをネイティブ Win32 フロントエンドで包んだ移植版です
 - 無料・非営利のホームブリュー（自作ソフト）で、ソースコードを同梱しています
 - ライセンスは、全体が **GPL-2.0**(上流の gpSP と同じ条件)、自作部分が **MIT** です。詳細は [`LICENSE`](LICENSE)・[`COPYING`](../COPYING)・[`THIRDPARTY_LICENSES.txt`](THIRDPARTY_LICENSES.txt)・[`LICENSING.md`](LICENSING.md) を参照してください
 - ゲーム ROM・GBA 実機 BIOS（`gba_bios.bin`）は同梱していません。利用者が合法的に用意したものを使用してください。BIOS を用意しなくても、ゲームは動きます。
@@ -33,7 +33,7 @@ https://github.com/daizu-coder/PopGBA/releases/latest
 
 ## 使用方法
 
-対象は SHARP Brain(PW-G5200 系)。PC にリムーバブルディスクとして接続し、ドライブ直下に次の構成を作ります(メニュー項目名は機種により異なる場合があります):
+対象は SHARP Brain(PW-G5300)。PC にリムーバブルディスクとして接続し、ドライブ直下に次の構成を作ります(メニュー項目名は機種により異なる場合があります):
 
 ```
 <ドライブ直下>/
@@ -56,7 +56,7 @@ https://github.com/daizu-coder/PopGBA/releases/latest
 
 ## 動作確認環境
 
-- SHARP Brain PW-G5200
+- SHARP Brain PW-G5300
 
 ## クレジット
 

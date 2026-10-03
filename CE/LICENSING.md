@@ -1,6 +1,6 @@
 # PopGBA のライセンス
 
-PopGBA は、ゲームボーイアドバンスのエミュレータ [gpSP](https://github.com/libretro/gpsp)(Exophase 氏作、libretro 版)を、SHARP Brain PW-G5200(Windows CE)向けに移植した**非公式**の改変版です。gpSP の作者やメンテナーはこの移植に関わっていません。
+PopGBA は、ゲームボーイアドバンスのエミュレータ [gpSP](https://github.com/libretro/gpsp)(Exophase 氏作、libretro 版)を、SHARP Brain PW-G5300(Windows CE)向けに移植した**非公式**の改変版です。gpSP の作者やメンテナーはこの移植に関わっていません。
 
 ライセンスは2段になっています。
 

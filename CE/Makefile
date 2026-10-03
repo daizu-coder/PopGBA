@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 daizu-coder
 #
-# Windows CE (SHARP Brain PW-G5200, ARM, no HW integer divide) port of gpSP.
+# Windows CE (SHARP Brain PW-G5300, ARM, no HW integer divide) port of gpSP.
 # Built with the cegcc cross toolchain.  Run from inside this directory:
 #   make clean && make && make strip
 #
@@ -24,7 +24,7 @@
 #    so instead of porting vfs_implementation.c we provide
 #    ce_filestream.c (fopen-based) and compile just compat_strl.c.
 #
-# armv5te / mtune=arm926ej-s / mno-unaligned-access match the PW-G5200's
+# armv5te / mtune=arm926ej-s / mno-unaligned-access match the PW-G5300's
 # actual core and its strict alignment trap.
 
 COREROOT := ..

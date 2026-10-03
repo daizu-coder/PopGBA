@@ -2,7 +2,7 @@ PopGBA - License
 ================
 
 PopGBA is an unofficial port of the gpSP Game Boy Advance emulator
-(libretro edition) to the SHARP Brain PW-G5200 (Windows CE, ARM). Its
+(libretro edition) to the SHARP Brain PW-G5300 (Windows CE, ARM). Its
 license has two levels.
 
 1. PopGBA as a whole: the GNU GPL, version 2 (same terms as upstream)

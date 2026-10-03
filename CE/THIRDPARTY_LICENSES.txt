@@ -1,4 +1,4 @@
-PopGBA (SHARP Brain PW-G5200) - Third-party licenses
+PopGBA (SHARP Brain PW-G5300) - Third-party licenses
 ====================================================
 
 This file records the provenance and licensing of every component that
