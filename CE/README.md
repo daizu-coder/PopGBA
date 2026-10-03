@@ -62,7 +62,7 @@ https://github.com/daizu-coder/PopGBA/releases/latest
 
 - **gpSP（gameplaySP）** GBA エミュレーションコア — 原作者は **Exophase** 氏。GPL-2.0
 - **libretro / gpsp** — 上記を libretro 化・保守しているフォーク（**David Guillen Fandos** 氏および libretro チーム）<https://github.com/libretro/gpsp>
-- **フォールバック GBA BIOS**（`open_gba_bios.bin`）— Nintendo 純正 BIOS のクリーンルーム実装。**Normmatt** 氏 / **VBA・VBA-M 開発チーム** 製、GPL-2.0
+- **オープンソースの GBA BIOS**（`open_gba_bios.bin`）— 任天堂の公式 BIOS の代わりとなるもの。**Normmatt** 氏 / **VBA・VBA-M 開発チーム** 製、GPL-2.0
 - **ARM 命令エンコードマクロ** — Mono プロジェクトの ARM コードジェネレータ。**Sergey Chaban** 氏 / **Wild West Software**、MIT
 - **libretro API** ヘッダ・**libretro-common** の一部 — **The RetroArch team**、MIT
 - **Galmuri** ビットマップフォント（メニューの既定の文字）— **Lee Minseo**（quiple）氏、SIL Open Font License 1.1 <https://github.com/quiple/galmuri>

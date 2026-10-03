@@ -73,7 +73,7 @@ and this device:
 None of this changes the license.
 
 
-Bundled fallback GBA BIOS (open_gba_bios.bin)
+Bundled open-source GBA BIOS (open_gba_bios.bin)
 ----------------------------------------------
 Files: bios_data.S (.incbin "bios/open_gba_bios.bin", exporting the
 symbol open_gba_bios_rom - part of CE/Makefile's SOURCES_CORE, so this
@@ -82,7 +82,7 @@ itself is bios/open_gba_bios.bin; its C/assembly source is included
 unmodified under bios/source/ and bios/Makefile (not cross-compiled by
 this port; it is the upstream source corresponding to the linked
 binary).
-Upstream: an open-source reimplementation of the Nintendo GBA BIOS,
+Upstream: an open source replacement for Nintendo's official BIOS,
 originally written by Normmatt and the VBA / VBA-M development team
 (bios/README.md; source also at
 https://github.com/Nebuleon/ReGBA/tree/master/bios).

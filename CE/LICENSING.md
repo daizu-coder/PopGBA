@@ -53,13 +53,13 @@ PopGBA の自作部分は、MIT ライセンスです。本文は [`LICENSE`](LI
 
 | もの | 作者 | ライセンス |
 |---|---|---|
-| 代わりの GBA BIOS(`bios/open_gba_bios.bin`) | Normmatt 氏、VBA / VBA-M 開発チーム | GPL-2.0 |
+| オープンソースの GBA BIOS(`bios/open_gba_bios.bin`) | Normmatt 氏、VBA / VBA-M 開発チーム | GPL-2.0 |
 | ARM 命令のマクロ(`arm/arm_codegen.h`、`arm/arm_dpimacros.h`) | Sergey Chaban 氏、Wild West Software | MIT |
 | libretro API のヘッダ、libretro-common の一部 | The RetroArch team | MIT |
 | Galmuri フォント(メニューの既定の文字) | Lee Minseo 氏 | SIL Open Font License 1.1 |
 | 東雲 16 ドットフォント | 古川泰之 氏ほか、/efont/ | 実質パブリックドメイン |
 
-代わりの BIOS は、任天堂の BIOS をコピーしたものではなく、別に書かれたオープンソースのものです。`gba_bios.bin` が見つからないときにだけ使います。
+オープンソースの BIOS は、任天堂の公式 BIOS の代わりとなるものです。`gba_bios.bin` が見つからないときや、中身が正しくないときに使います。
 
 ## 6. 同梱していないもの
 

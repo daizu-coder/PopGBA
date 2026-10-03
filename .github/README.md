@@ -45,7 +45,7 @@ PopGBA 全体は、上流の gpSP と同じ条件の GNU General Public License 
 PopGBA は、次の方々の作品を使わせていただいています。ありがとうございます。
 
 - **gpSP**(エミュレータ本体):Exophase 氏。libretro 版は David Guillen Fandos 氏と libretro のコントリビューターが保守しています。GNU GPL バージョン2(GPL-2.0)。上流は [libretro/gpsp](https://github.com/libretro/gpsp) です。
-- **代わりの GBA BIOS**(`gba_bios.bin` がないときに使う、オープンソースの BIOS):Normmatt 氏、VBA / VBA-M 開発チーム。GNU GPL バージョン2(GPL-2.0)。
+- **オープンソースの GBA BIOS**(`gba_bios.bin` がないときに使う、任天堂の公式 BIOS の代わりとなるもの):Normmatt 氏、VBA / VBA-M 開発チーム。GNU GPL バージョン2(GPL-2.0)。
 - **ARM 命令のマクロ**(動的リコンパイラ):Sergey Chaban 氏、Wild West Software。MIT ライセンス。
 - **libretro API のヘッダ、libretro-common の一部**:The RetroArch team。MIT ライセンス。
 - **東雲フォント(16ドット)**(画面の文字):古川泰之氏ほか、/efont/(電子書体オープンラボ)。実質パブリックドメイン。
