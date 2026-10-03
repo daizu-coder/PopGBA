@@ -38,13 +38,12 @@ static HWND   g_hwnd     = NULL;
 static HANDLE g_mutex    = NULL;
 static volatile int g_running = 0;
 
-/* Japanese-capable replacements for MessageBoxW() - implemented further
+/* Japanese-capable replacement for MessageBoxW() - implemented further
  * down (IDD_MSGBOX / IDD_CONFIRM section), forward-declared here so the
- * save/load-state helpers above that section can use them. See
+ * save/load-state helpers above that section can use it. See
  * ce_res.rc's IDD_MSGBOX comment for why MessageBoxW() can't carry
  * Japanese text on this device any more. */
 static void CeShowMsgBox(HWND owner, const wchar_t *text);
-static int  CeConfirm(HWND owner, const wchar_t *text);
 
 /* Set by RestartProcess() when a dynarec-safe ROM switch has spawned a
  * suspended relaunched instance; CeShutdown() resumes it (see that
@@ -78,8 +77,7 @@ static double g_frameIntervalMs = 1000.0 / 59.728;
 
 static void CeShutdown(int exitCode); /* used by MainMenuDlgProc, below */
 static void CeShowShellChrome(HWND hwnd); /* used by CeShutdown, defined further below */
-static int  ResolveBiosSystemDir(void);      /* defined below; also retried from LoadRomPath */
-static int  PromptAndSetupBios(HWND hwnd);   /* defined after CeConfirm; used by LoadRomPath */
+static int  ResolveBiosSystemDir(void);      /* defined below; called once from WinMain */
 static void CeHideShellChrome(HWND hwnd); /* used by ShowMainMenuDialog and WinMain, defined further below */
 
 /* round 66: picture of the main menu, taken just before it closes for
@@ -235,9 +233,10 @@ static void WidePathToNarrow(const wchar_t *wide, char *out, size_t outSize)
 /* Narrow directory handed to the core for RETRO_ENVIRONMENT_GET_SYSTEM_
  * DIRECTORY (where gpSP looks for gba_bios.bin). Empty until a folder
  * that actually holds gba_bios.bin is located; while empty the
- * environment query returns false, the core then looks next to the ROM,
- * and if that fails too LoadRomPath()'s retry prompts for a pick
- * (PromptAndSetupBios). Never gates startup or the main menu. */
+ * environment query returns false and the core looks next to the ROM
+ * instead. If no usable gba_bios.bin turns up there either, the core
+ * runs on its built-in open-source BIOS. Never gates startup, the main
+ * menu or a ROM load. */
 static char g_biosSysDirUtf8[MAX_PATH * 3] = "";
 
 static int DirHasGbaBiosW(const wchar_t *dir)
@@ -257,11 +256,14 @@ static void SetBiosSysDirFromW(const wchar_t *dir)
 /* Point g_biosSysDirUtf8 at a folder holding gba_bios.bin without
  * persisting an absolute path that breaks if the app is moved:
  *   (a) the folder remembered from a previous BIOS pick (config key
- *       "BiosDir");
+ *       "BiosDir"). v1.0.2 removed the BIOS picker, so nothing writes
+ *       this key any more, but a PopGBA.cfg from v1.0.0/v1.0.1 may still
+ *       carry one and it is honoured so those users keep their BIOS;
  *   (b) else gba_bios.bin sitting next to AppMain.exe.
  * Either can be a Japanese folder name - see WidePathToNarrow()'s
  * comment. Returns 1 if a BIOS dir is now configured, 0 if none was
- * found (caller then falls back to PromptAndSetupBios). Earlier builds
+ * found (the core then looks next to the ROM, and otherwise uses its
+ * built-in open-source BIOS). Earlier builds
  * copied gba_bios.bin to a fixed ASCII cache dir (\Storage Card\
  * PopGBA_data); that copy is gone - the user keeps the BIOS where they
  * put it. */
@@ -407,19 +409,19 @@ static bool ce_environment(unsigned cmd, void *data)
 
     case RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY:
     {
-        /* Unlike the sister Genesis/SNES CE ports, gpSP *requires* a real
-         * GBA BIOS image (gba_bios.bin - copyrighted Nintendo firmware,
-         * not something this port can ship; the user must supply their
-         * own dump) to run any game at all - see load_bios()/error_msg()
-         * in libretro.c. Without answering this query, gpSP falls back to
-         * looking for gba_bios.bin next to the ROM being loaded
-         * (main_path, libretro.c), which would force a separate BIOS copy
-         * in every ROM folder. Answering with the folder ResolveBiosSystem
-         * Dir() located (next to AppMain.exe, or a previously picked one)
-         * instead means the user usually only needs one gba_bios.bin
-         * dropped next to AppMain.exe. Until one is located g_biosSysDir
-         * Utf8 is empty - return false so the core keeps its ROM-adjacent
-         * fallback, and LoadRomPath()'s retry prompts for a pick. */
+        /* gpSP does not need a real GBA BIOS image: when gba_bios.bin
+         * (copyrighted Nintendo firmware, not something this port can
+         * ship) is missing or looks wrong, retro_load_game() in
+         * libretro.c silently uses its built-in open-source BIOS
+         * (bios/open_gba_bios.bin) instead, so a missing BIOS never makes
+         * a ROM load fail. A user who does have their own dump only
+         * needs one gba_bios.bin dropped next to AppMain.exe: answering
+         * this query with the folder ResolveBiosSystemDir() located (next
+         * to AppMain.exe, or one remembered from an older version's BIOS
+         * picker) points the core there. Until one is located g_biosSys
+         * DirUtf8 is empty - return false so the core looks for
+         * gba_bios.bin next to the ROM being loaded (main_path,
+         * libretro.c) instead. */
         if (g_biosSysDirUtf8[0] == '\0')
         {
             CeLog("ce_environment: SYSTEM_DIRECTORY not resolved yet");
@@ -684,36 +686,25 @@ static int LoadRomPath(HWND hwnd, const wchar_t *romPath)
 
     if (!retro_load_game(&game))
     {
-        /* The usual first-load failure on this device is a missing
-         * gba_bios.bin (gpSP's load_bios() -> "Could not load BIOS image
-         * file."). Try once more to locate a BIOS folder (covers one
-         * dropped in since startup, or a remembered pick), then fall back
-         * to a one-shot BIOS picker, and retry the load once if either
-         * wires up a system directory - same recovery the sister PopSG
-         * port does for the Mega CD BIOS. gpSP re-queries GET_SYSTEM_
-         * DIRECTORY on every retro_load_game() call, and the first
-         * (failed) call bailed out before load_gamepak()/reset_gba(), so
-         * a second call is clean. */
-        int retried = 0;
-
-        if (ResolveBiosSystemDir() || PromptAndSetupBios(hwnd))
-        {
-            CeShowLoadingScreen(hwnd);
-            retried = retro_load_game(&game);
-        }
-
-        if (!retried)
-        {
-            CeLog("LoadRomPath: retro_load_game failed");
-            MessageBoxW(hwnd, L"Failed to load ROM.", kAppTitle, MB_OK);
-            g_romLoaded = 0;
-            /* Restores hwnd (the loading screen's black fill + text, still
-             * covering it) once the MessageBox above is dismissed - RDW_
-             * ALLCHILDREN so the main menu dialog's own buttons repaint too,
-             * not just the dialog's own background. */
-            RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN | RDW_UPDATENOW);
-            return 0;
-        }
+        /* A missing or wrong gba_bios.bin never gets here - the core falls
+         * back to its built-in open-source BIOS (see GET_SYSTEM_DIRECTORY
+         * in ce_environment). What does fail is the ROM itself: the file
+         * can't be opened, is empty or over 512 MiB, or there is not
+         * enough memory for it (retro_load_game()/load_gamepak()). Asking
+         * for a BIOS can't fix any of those, so just say the ROM didn't
+         * load. Up to v1.0.1 this asked for gba_bios.bin first, a leftover
+         * from an older core that really needed one. */
+        CeLog("LoadRomPath: retro_load_game failed");
+        CeShowMsgBox(hwnd, CeLangIsJapanese()
+            ? L"ROM \x3092\x8aad\x307f\x8fbc\x3081\x307e\x305b\x3093\x3067\x3057\x305f\x3002" /* ROM を読み込めませんでした。 */
+            : L"Failed to load ROM.");
+        g_romLoaded = 0;
+        /* Restores hwnd (the loading screen's black fill + text, still
+         * covering it) once the message box above is dismissed - RDW_
+         * ALLCHILDREN so the main menu dialog's own buttons repaint too,
+         * not just the dialog's own background. */
+        RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN | RDW_UPDATENOW);
+        return 0;
     }
 
     g_romLoaded = 1;
@@ -1236,14 +1227,6 @@ static INT_PTR CALLBACK ConfirmDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARA
     }
 }
 
-/* Returns 1 for Yes, 0 for No/Back. */
-static int CeConfirm(HWND owner, const wchar_t *text)
-{
-    wcsncpy(s_msgBoxText, text, CE_MSGBOX_MAX_TEXT - 1);
-    s_msgBoxText[CE_MSGBOX_MAX_TEXT - 1] = L'\0';
-    return (int)DialogBoxW(g_hInstance, MAKEINTRESOURCEW(IDD_CONFIRM), owner, ConfirmDlgProc) == 1;
-}
-
 static void CeShowMsgBox(HWND owner, const wchar_t *text)
 {
     wcsncpy(s_msgBoxText, text, CE_MSGBOX_MAX_TEXT - 1);
@@ -1375,67 +1358,6 @@ static void CeConfirmAndSaveState(HWND owner)
             CE_MSGBOX_MAX_TEXT - 1);
     s_msgBoxText[CE_MSGBOX_MAX_TEXT - 1] = L'\0';
     DialogBoxW(g_hInstance, MAKEINTRESOURCEW(IDD_CONFIRM), owner, SaveStateDlgProc);
-}
-
-/* Asks whether to pick gba_bios.bin, runs the BIOS-only file picker,
- * points the core's system dir at the folder the picked file sits in and
- * persists that folder (config key "BiosDir"). Returns 1 only when a
- * usable BIOS is now configured, so LoadRomPath() can retry the load; 0
- * if the user declined, cancelled, or the file looked wrong. Same shape
- * as the sister PopSG port's PromptAndSetupMegaCdBios(). */
-static int PromptAndSetupBios(HWND hwnd)
-{
-    wchar_t biosPath[MAX_PATH];
-    wchar_t dir[MAX_PATH];
-    char dirUtf8[MAX_PATH * 3];
-    wchar_t *slash;
-    FILE *f;
-    long sz;
-
-    if (!CeConfirm(hwnd, CeLangIsJapanese()
-            ? L"GBA\x306e" L"BIOS" L"\x30d5\x30a1\x30a4\x30eb(gba_bios.bin)\x304c\x5fc5\x8981\x3067\x3059\x3002\x9078\x629e\x3057\x307e\x3059\x304b\xff1f"
-              /* GBAのBIOSファイル(gba_bios.bin)が必要です。選択しますか？ */
-            : L"A GBA BIOS file (gba_bios.bin) is required. Select it now?"))
-        return 0;
-
-    if (!CeShowFileOpenDialog(hwnd, biosPath, MAX_PATH, CE_FILEOPEN_BIOS))
-        return 0;
-
-    /* Size sanity check: a real GBA BIOS dump is exactly 16 KB. gpSP's
-     * load_bios() itself only checks that the file opens, so a wrong file
-     * would "load" and then misbehave - catch it here with a clear
-     * message instead. */
-    f = _wfopen(biosPath, L"rb");
-    if (f)
-    {
-        fseek(f, 0, SEEK_END);
-        sz = ftell(f);
-        fclose(f);
-    }
-    else
-        sz = -1;
-
-    if (sz != 16384)
-    {
-        CeLog("PromptAndSetupBios: picked file size %ld, expected 16384", sz);
-        CeShowMsgBox(hwnd, CeLangIsJapanese()
-            ? L"gba_bios.bin \x3067\x306f\x306a\x3044\x3088\x3046\x3067\x3059\x3002" /* gba_bios.bin ではないようです。 */
-            : L"That file does not look like a GBA BIOS (gba_bios.bin).");
-        return 0;
-    }
-
-    wcsncpy(dir, biosPath, MAX_PATH - 1);
-    dir[MAX_PATH - 1] = L'\0';
-    slash = wcsrchr(dir, L'\\');
-    if (slash)
-        *slash = L'\0';
-
-    SetBiosSysDirFromW(dir);
-    WideCharToMultiByte(CP_UTF8, 0, dir, -1, dirUtf8, sizeof(dirUtf8), NULL, NULL);
-    CeConfigSetString("BiosDir", dirUtf8);
-    CeConfigSave();
-    CeLog("PromptAndSetupBios: BIOS folder configured and remembered");
-    return 1;
 }
 
 /* ------------------------------------------------------------------ */
@@ -2195,14 +2117,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLin
 
     /* No non-ASCII path guard here: showing the main menu must never be
      * blocked. gpSP only reaches a narrow path it can't reopen (the
-     * picked ROM, or a picked gba_bios.bin - see WidePathToNarrow()'s
+     * picked ROM - see WidePathToNarrow()'s
      * comment) once the user actually starts a load, so the hard-exit
-     * guard lives only at the two file-picker results: right after the
-     * ROM picker (LoadRomFlow/LoadRomPath) and right after the BIOS
-     * picker (PromptAndSetupBios). A non-ASCII install folder is no
-     * longer fatal - it just means gba_bios.bin next to AppMain.exe
-     * can't be auto-detected, so the user is prompted to pick a BIOS
-     * from an ASCII folder instead (remembered via config key "BiosDir").
+     * guard lives only at the ROM picker's result (LoadRomFlow/
+     * LoadRomPath). A non-ASCII install folder is no longer fatal - at
+     * worst gba_bios.bin next to AppMain.exe isn't found and the core
+     * runs on its built-in open-source BIOS instead.
      * BIOS/ROM-free operations (browsing menus, Input/Sound/Video config)
      * stay usable regardless. */
 
@@ -2212,10 +2132,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLin
     CeFileOpenInit();
 
     /* Pre-locate gba_bios.bin (next to AppMain.exe, or a folder
-     * remembered from a previous pick) so the common case loads without a
-     * prompt. Non-fatal and silent when nothing is found or the install
-     * folder is non-ASCII - LoadRomPath()'s retry prompts for a pick when
-     * the user actually starts a load. Never blocks the menu. */
+     * remembered from an older version's BIOS picker). Only done here, at
+     * startup. Non-fatal and silent when nothing is found - the core then
+     * looks next to the ROM, and otherwise uses its built-in open-source
+     * BIOS. Never blocks the menu. */
     ResolveBiosSystemDir();
 
     retro_set_environment(ce_environment);
