@@ -11,19 +11,12 @@ electronic dictionary (Windows CE / ARM), built by wrapping the
 
 ## 概要
 
-- SHARP の電子辞書 **Brain PW-G5200**（Windows CE / ARM）向けに、GBA
-  エミュレータ **gpSP**（gameplaySP）の libretro コアをネイティブ
-  Win32 フロントエンドで包んだ移植版です
-- 無料・非営利のホームブリュー（自作ソフト）で、ソースコードを同梱
-  しています
-- ライセンスは、全体が **GPL-2.0**(上流の gpSP と同じ条件)、自作部分が
-  **MIT** です。詳細は [`LICENSE`](LICENSE)・[`COPYING`](../COPYING)・
-  [`THIRDPARTY_LICENSES.txt`](THIRDPARTY_LICENSES.txt)・
-  [`LICENSING.md`](LICENSING.md) を参照してください
+- SHARP の電子辞書 **Brain PW-G5200**（Windows CE / ARM）向けに、GBA エミュレータ **gpSP**（gameplaySP）の libretro コアをネイティブ Win32 フロントエンドで包んだ移植版です
+- 無料・非営利のホームブリュー（自作ソフト）で、ソースコードを同梱しています
+- ライセンスは、全体が **GPL-2.0**(上流の gpSP と同じ条件)、自作部分が **MIT** です。詳細は [`LICENSE`](LICENSE)・[`COPYING`](../COPYING)・[`THIRDPARTY_LICENSES.txt`](THIRDPARTY_LICENSES.txt)・[`LICENSING.md`](LICENSING.md) を参照してください
 - ゲーム ROM・GBA 実機 BIOS（`gba_bios.bin`）は同梱していません。利用者が合法的に用意したものを使用してください。BIOS を用意しなくても、ゲームは動きます。
 - SHARP・任天堂とは一切関係のない非公式のファンプロジェクトです
-- gpSP の公式版ではありません。gpSP の作者・メンテナーはこの移植に
-  関わっていないので、不具合はこちらに報告してください
+- gpSP の公式版ではありません。gpSP の作者・メンテナーはこの移植に関わっていないので、不具合はこちらに報告してください
 
 ## ダウンロード
 
@@ -35,9 +28,7 @@ https://github.com/daizu-coder/PopGBA/releases/latest
 - SDK / トゥールチェーン
   * cegcc（`arm-mingw32ce-*`）— Windows CE / ARM 向けクロスコンパイラ
 - ビルド手順
-  * `CE/` ディレクトリに移動し、`make && make strip` を実行
-    （エミュレータ本体は、リポジトリ直下の上流 gpSP のソースを
-    そのまま使います）
+  * `CE/` ディレクトリに移動し、`make && make strip` を実行（エミュレータ本体は、リポジトリ直下の上流 gpSP のソースをそのまま使います）
   * `CE/AppMain.exe` が生成されます（依存 DLL は `COREDLL.dll` のみ）
 
 ## 使用方法
@@ -60,10 +51,8 @@ https://github.com/daizu-coder/PopGBA/releases/latest
 - BIOS
   * ゲームの ROM と、ゲームボーイアドバンス本体の BIOS（任天堂の著作物）は同梱していません。BIOS を用意しなくても、ゲームは動きます。`AppMain.exe` の中に、オープンソースの BIOS が入っているためです。本物の BIOS を使うときは、ご自身で用意したものを `gba_bios.bin` という名前で置いてください（詳しくは [`LICENSING.md`](LICENSING.md)）
   * 置く場所は `AppMain.exe` と同じフォルダです。そこに無いときは、開いた ROM と同じフォルダも探します
-  * 見つからないときや、中身が正しくないときは、オープンソースの BIOS を使い
-    ます
-- ROM ファイル名・ROM を置くフォルダ名・`AppMain.exe` を置くフォルダ
-  名・BIOS を置くフォルダ名は、いずれも日本語を含んでいても開けます
+  * 見つからないときや、中身が正しくないときは、オープンソースの BIOS を使います
+- ROM ファイル名・ROM を置くフォルダ名・`AppMain.exe` を置くフォルダ名・BIOS を置くフォルダ名は、いずれも日本語を含んでいても開けます
 
 ## 動作確認環境
 
@@ -71,34 +60,18 @@ https://github.com/daizu-coder/PopGBA/releases/latest
 
 ## クレジット
 
-- **gpSP（gameplaySP）** GBA エミュレーションコア — 原作者は
-  **Exophase** 氏。GPL-2.0
-- **libretro / gpsp** — 上記を libretro 化・保守しているフォーク
-  （**David Guillen Fandos** 氏および libretro チーム）
-  <https://github.com/libretro/gpsp>
-- **フォールバック GBA BIOS**（`open_gba_bios.bin`）— Nintendo 純正
-  BIOS のクリーンルーム実装。**Normmatt** 氏 / **VBA・VBA-M 開発チーム**
-  製、GPL-2.0
-- **ARM 命令エンコードマクロ** — Mono プロジェクトの ARM コード
-  ジェネレータ。**Sergey Chaban** 氏 / **Wild West Software**、MIT
-- **libretro API** ヘッダ・**libretro-common** の一部 — **The RetroArch
-  team**、MIT
-- **Galmuri** ビットマップフォント（メニューの既定の文字）— **Lee Minseo**
-  （quiple）氏、SIL Open Font License 1.1
-  <https://github.com/quiple/galmuri>
-- **東雲（しののめ）16 ドットビットマップフォント** — メインデザイン
-  **古川 泰之** 氏ほか、**The Electronic Font Open Laboratory
-  （/efont/）**。実質パブリックドメイン
-  <https://github.com/code4fukui/shinonome-font>
-- **CeGCC** — Windows CE / ARM 向けクロスコンパイラ。**Danny Backx**
-  氏ほか、モダン版の **Max Kellermann** 氏
-- **SHARP Brain homebrew コミュニティ** — 端末固有情報を残してくだ
-  さった皆さん
+- **gpSP（gameplaySP）** GBA エミュレーションコア — 原作者は **Exophase** 氏。GPL-2.0
+- **libretro / gpsp** — 上記を libretro 化・保守しているフォーク（**David Guillen Fandos** 氏および libretro チーム）<https://github.com/libretro/gpsp>
+- **フォールバック GBA BIOS**（`open_gba_bios.bin`）— Nintendo 純正 BIOS のクリーンルーム実装。**Normmatt** 氏 / **VBA・VBA-M 開発チーム** 製、GPL-2.0
+- **ARM 命令エンコードマクロ** — Mono プロジェクトの ARM コードジェネレータ。**Sergey Chaban** 氏 / **Wild West Software**、MIT
+- **libretro API** ヘッダ・**libretro-common** の一部 — **The RetroArch team**、MIT
+- **Galmuri** ビットマップフォント（メニューの既定の文字）— **Lee Minseo**（quiple）氏、SIL Open Font License 1.1 <https://github.com/quiple/galmuri>
+- **東雲（しののめ）16 ドットビットマップフォント** — メインデザイン **古川 泰之** 氏ほか、**The Electronic Font Open Laboratory（/efont/）**。実質パブリックドメイン <https://github.com/code4fukui/shinonome-font>
+- **CeGCC** — Windows CE / ARM 向けクロスコンパイラ。**Danny Backx** 氏ほか、モダン版の **Max Kellermann** 氏
+- **SHARP Brain homebrew コミュニティ** — 端末固有情報を残してくださった皆さん
 - Windows CE フロントエンド（`CE/`）は本プロジェクトで作成
 
-コンポーネントごとの出所とライセンスの詳細は
-[`THIRDPARTY_LICENSES.txt`](THIRDPARTY_LICENSES.txt) および
-[`LICENSING.md`](LICENSING.md) を参照してください。
+コンポーネントごとの出所とライセンスの詳細は [`THIRDPARTY_LICENSES.txt`](THIRDPARTY_LICENSES.txt) および [`LICENSING.md`](LICENSING.md) を参照してください。
 
 ## 制作について
 
@@ -119,9 +92,7 @@ PopGBA の自作部分(`SPDX-License-Identifier: MIT` と書いてあるファ�
 
 ## 商標・免責
 
-PopGBA は非公式のファンプロジェクトです。シャープ株式会社および
-任天堂とは一切関係がなく、許諾・後援・承認も受けていません。
+PopGBA は非公式のファンプロジェクトです。シャープ株式会社および任天堂とは一切関係がなく、許諾・後援・承認も受けていません。
 
 - 「SHARP」「Brain」はシャープ株式会社の商標です。
-- 「Game Boy Advance」「ゲームボーイアドバンス」「Nintendo」「任天堂」
-  は任天堂の商標です。
+- 「Game Boy Advance」「ゲームボーイアドバンス」「Nintendo」「任天堂」は任天堂の商標です。
