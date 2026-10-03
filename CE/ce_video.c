@@ -79,10 +79,13 @@ static int         s_frameSkipConsecutive = 0; /* frames skipped in a row since 
  * patching of the older core could not (see the dev notes
  * rounds 54-59). Interpreter fallback stays available: set
  * "VideoDynarec=0" in PopGBA.cfg by hand (no Video Config dialog checkbox
- * - that dialog has no free row without a resize, see ce_res.rc). This is
- * an unreleased build so existing-config compatibility is not a concern;
+ * - that dialog has no free row without a resize, see ce_res.rc).
  * CeConfigGetInt below uses this initializer only as the missing-key
- * default. The translation caches are plain .bss static arrays;
+ * default, so changing it later only affects a PopGBA.cfg without a
+ * VideoDynarec line. CeVideoSaveConfig() writes that line whenever Video
+ * Config is closed (OK or Back), so a released version's cfg may already
+ * carry one, and it keeps its saved value. The translation caches are
+ * plain .bss static arrays;
  * platform_cache_sync() (cpu_threaded.c, CacheSync(CACHE_SYNC_ALL) shim)
  * is the only platform-specific bit. */
 static int         s_dynarec = 1;
@@ -177,7 +180,7 @@ int CeVideoEnvGetVariable(const char *key, const char **outValue)
     if (strcmp(key, "gpsp_drc") == 0)
     {
         /* See s_dynarec's declaration above for why this is config-file-
-         * only (no Video Config checkbox yet) and defaults off. */
+         * only (no Video Config checkbox yet) and defaults on. */
         *outValue = s_dynarec ? "enabled" : "disabled";
         return 1;
     }
