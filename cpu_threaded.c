@@ -245,7 +245,7 @@ typedef struct
     ctr_flush_invalidate_cache();
   }
 #elif defined(__MINGW32CE__)
-  /* PopGBA (SHARP Brain PW-G5200 / Windows CE): upstream's ARM_ARCH branch
+  /* PopGBA (SHARP Brain PW-G5300 / Windows CE): upstream's ARM_ARCH branch
    * calls __clear_cache(), but cegcc's arm-mingw32ce libgcc ships that as a
    * bare "bx lr" no-op (verified with nm/objdump), so
    * JIT-emitted code would run with a stale I-cache: crashes / garbage that
