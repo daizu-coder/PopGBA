@@ -42,6 +42,20 @@ u32 mips_update_gba(u32 pc);
 void mips_indirect_branch_arm(u32 address);
 void mips_indirect_branch_thumb(u32 address);
 void mips_indirect_branch_dual(u32 address);
+void execute_vram_arm(u32 address);
+void execute_vram_thumb(u32 address);
+
+/* VRAM is mutable code. Cache only a tiny dispatch stub and interpret until
+ * execution leaves VRAM, matching the ARM dynarec path.
+ * The block prologue must be emitted: block_lookup_translate hands out
+ * (block start + block_prologue_size) as the entry point, and the prologue
+ * is also what loads reg_pc, which generate_load_pc depends on. */
+#define HAVE_VRAM_INTERPRETER
+#define generate_vram_interpreter(type)                                      \
+  generate_block_prologue();                                                  \
+  generate_load_pc(reg_a0, pc);                                               \
+  mips_emit_j(mips_absolute_offset(execute_vram_##type));                     \
+  mips_emit_nop()
 
 u32 execute_read_cpsr();
 u32 execute_read_spsr();
@@ -2142,6 +2156,44 @@ static void emit_pmemld_stub(
   // The patcher to use depends on ld/st, access size, and sign extension
   // (so there's 10 of them). They live in the top stub addresses.
   mips_emit_b(bne, reg_zero, reg_temp, ld_phndlr_branch(memop_number));
+
+  if (region == 4) {
+    /* Keep the common I/O reads on the direct path, but route the block that
+     * contains write-only/masked video, sound and DMA registers through the
+     * hardware-aware C reader.  This mirrors the ARM/x86 stubs without making
+     * VCOUNT, timers or key input pay for a function call. */
+    const u32 hndreadtbl[] = {
+      (u32)&read_memory8,  (u32)&read_memory16, (u32)&read_memory32,
+      (u32)&read_memory8s, (u32)&read_memory16s, (u32)&read_memory32 };
+    u8 *direct1, *slow1, *direct2;
+
+    mips_emit_andi(reg_temp, reg_a0, 0xFFFF);
+    mips_emit_sltiu(reg_rv, reg_temp, 0x10);
+    mips_emit_b_filler(bne, reg_rv, reg_zero, direct1);
+    mips_emit_nop();
+    mips_emit_sltiu(reg_rv, reg_temp, 0x100);
+    mips_emit_b_filler(bne, reg_rv, reg_zero, slow1);
+    mips_emit_nop();
+    mips_emit_sltiu(reg_rv, reg_temp, 0x400);
+    mips_emit_b_filler(bne, reg_rv, reg_zero, direct2);
+    mips_emit_nop();
+
+    generate_branch_patch_conditional(slow1, translation_ptr);
+    emit_save_regs(true);
+    mips_emit_sw(mips_reg_ra, reg_base, ReOff_SaveR1);
+    genccall(hndreadtbl[size + (signext ? 3 : 0)]);
+    if (!aligned) {
+      mips_emit_sw(reg_a1, reg_base, ReOff_RegPC);
+    } else {
+      mips_emit_nop();
+    }
+    mips_emit_lw(mips_reg_ra, reg_base, ReOff_SaveR1);
+    emit_restore_regs(true);
+    generate_function_return_swap_delay();
+
+    generate_branch_patch_conditional(direct1, translation_ptr);
+    generate_branch_patch_conditional(direct2, translation_ptr);
+  }
 
   // BIOS region requires extra checks for protected reads
   if (region == 0) {

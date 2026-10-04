@@ -432,6 +432,32 @@ execute_swi_builder(thumb)
 
 @ Uses sp as reg_base; must hold consistently true.
 
+@ Interpret VRAM, then resume the appropriate cached register map/mode.
+defsymbl(execute_vram_arm)
+  save_flags()
+  str r0, [reg_base, #REG_PC]
+  store_registers_arm()
+  collapse_flags(r0)
+  bic r0, r0, #0x20
+  b execute_vram_common
+
+defsymbl(execute_vram_thumb)
+  save_flags()
+  str r0, [reg_base, #REG_PC]
+  store_registers_thumb()
+  collapse_flags(r0)
+  orr r0, r0, #0x20
+
+execute_vram_common:
+  str r0, [reg_base, #REG_CPSR]
+  mvn r0, reg_cycles
+  bl execute_arm_vram
+  cmp r0, #0
+  blt return_to_main
+  bic reg_cycles, r0, #0xF0000000
+  mvn reg_cycles, reg_cycles
+  b lookup_pc
+
 defsymbl(execute_arm_translate_internal)
 
   @ save the registers to be able to return later
@@ -812,8 +838,18 @@ ld_iwram_##load_type:                     /* IWRAM area                    */;\
   add pc, lr, #4                                                             ;\
                                                                              ;\
 ld_ioram_##load_type:                     /* I/O RAM area                  */;\
+  save_flags()                            /* cmp trashes the guest flags   */;\
+  bic r1, r0, #0xff000000                                                    ;\
+  cmp r1, #0x10                                                              ;\
+  blo 7f                                                                     ;\
+  cmp r1, #0x100                                                             ;\
+  blo 9f                                  /* slow path, flags saved        */;\
+  cmp r1, #0x400                                                             ;\
+  bhs 9f                                                                     ;\
+7:                                                                           ;\
   add r2, reg_base, #IOREG_OFF                                               ;\
   exec_ld_op_##load_type(10)              /* Clear upper bits (10 LSB)     */;\
+  restore_flags()                                                            ;\
   add pc, lr, #4                                                             ;\
                                                                              ;\
 ld_palram_##load_type:                    /* Palette RAM area              */;\

@@ -854,6 +854,8 @@ const u32 spsr_masks[4] = { 0x00000000, 0x000000EF, 0xF0000000, 0xF00000EF };
 {                                                                             \
   u8 *map;                                                                    \
   u32 _address = addr;                                                        \
+  bool _io_handler = ((_address >> 24) == 0x04) &&                            \
+                     io_read_requires_handler(_address);                       \
                                                                               \
   if(_address < 0x10000000)                                                   \
   {                                                                           \
@@ -866,10 +868,21 @@ const u32 spsr_masks[4] = { 0x00000000, 0x000000EF, 0xF0000000, 0xF00000EF };
   if (                                                                        \
      (((_address >> 24) == 0) && (reg[REG_PC] >= 0x4000)) ||  /* BIOS read */ \
      (_address & aligned_address_mask##size) ||      /* Unaligned access */   \
+     _io_handler ||                                  /* Special I/O read */   \
      !(map = memory_map_read[_address >> 15])        /* Unmapped memory */    \
   )                                                                           \
   {                                                                           \
-    dest = (type)(readfn)(_address);                                          \
+    if (_io_handler)                                                          \
+    {                                                                         \
+      /* The interpreter has already advanced PC for this instruction.        \
+       * read_open* expects the current instruction PC, like dynarec stubs. */ \
+      u32 _saved_pc = reg[REG_PC];                                            \
+      reg[REG_PC] -= (reg[REG_CPSR] & 0x20) ? 2 : 4;                         \
+      dest = (type)(readfn)(_address);                                        \
+      reg[REG_PC] = _saved_pc;                                                \
+    }                                                                         \
+    else                                                                      \
+      dest = (type)(readfn)(_address);                                        \
   }                                                                           \
   else                                                                        \
   {                                                                           \
@@ -895,6 +908,8 @@ const u32 spsr_masks[4] = { 0x00000000, 0x000000EF, 0xF0000000, 0xF00000EF };
 {                                                                             \
   u32 _address = address;                                                     \
   u8 *map = memory_map_read[_address >> 15];                                  \
+  bool _io_handler = ((_address >> 24) == 0x04) &&                            \
+                     io_read_requires_handler(_address);                       \
   if(_address < 0x10000000)                                                   \
   {                                                                           \
     /* Account for cycles and other stats */                                  \
@@ -902,13 +917,21 @@ const u32 spsr_masks[4] = { 0x00000000, 0x000000EF, 0xF0000000, 0xF00000EF };
     cycles_remaining -= ws_cyc_seq[region][1];                                \
     STATS_MEMORY_ACCESS(read, u32, region);                                   \
   }                                                                           \
-  if(_address < 0x10000000 && map)                                            \
+  if(_address < 0x10000000 && map && !_io_handler)                            \
   {                                                                           \
     dest = readaddress32(map, _address & 0x7FFF);                             \
   }                                                                           \
   else                                                                        \
   {                                                                           \
-    dest = read_memory32(_address);                                           \
+    if (_io_handler)                                                          \
+    {                                                                         \
+      u32 _saved_pc = reg[REG_PC];                                            \
+      reg[REG_PC] -= (reg[REG_CPSR] & 0x20) ? 2 : 4;                         \
+      dest = read_memory32(_address);                                         \
+      reg[REG_PC] = _saved_pc;                                                \
+    }                                                                         \
+    else                                                                      \
+      dest = read_memory32(_address);                                         \
   }                                                                           \
 }                                                                             \
 
@@ -1476,7 +1499,7 @@ u8 vram[1024 * 96];
 u16 io_registers[512];
 #endif
 
-void execute_arm(u32 cycles)
+static u32 execute_arm_internal(u32 cycles, bool vram_only)
 {
   u32 opcode;
   u32 condition;
@@ -1499,7 +1522,7 @@ void execute_arm(u32 cycles)
     if (reg[CPU_HALT_STATE] != CPU_ACTIVE) {
        u32 ret = update_gba(cycles_remaining);
        if (completed_frame(ret))
-          return;
+          return ret;
 
        cycles_remaining = cycles_to_run(ret);
     }
@@ -1515,6 +1538,8 @@ void execute_arm(u32 cycles)
 arm_loop:
 
        collapse_flags();
+       if (vram_only && (reg[REG_PC] >> 24) != 0x06)
+          return cycles_remaining > 0 ? (u32)cycles_remaining : update_gba(cycles_remaining);
 
        /* Process cheats if we are about to execute the cheat hook */
        if (reg[REG_PC] == cheat_master_hook)
@@ -3070,7 +3095,7 @@ skip_instruction:
     collapse_flags();
     update_ret = update_gba(cycles_remaining);
     if (completed_frame(update_ret))
-       return;
+       return update_ret;
     cycles_remaining = cycles_to_run(update_ret);
     continue;
 
@@ -3079,6 +3104,8 @@ skip_instruction:
 thumb_loop:
 
        collapse_flags();
+       if (vram_only && (reg[REG_PC] >> 24) != 0x06)
+          return cycles_remaining > 0 ? (u32)cycles_remaining : update_gba(cycles_remaining);
 
        /* Process cheats if we are about to execute the cheat hook */
        if (reg[REG_PC] == cheat_master_hook)
@@ -3550,7 +3577,7 @@ thumb_loop:
     collapse_flags();
     update_ret = update_gba(cycles_remaining);
     if (completed_frame(update_ret))
-       return;
+       return update_ret;
     cycles_remaining = cycles_to_run(update_ret);
     continue;
 
@@ -3558,6 +3585,31 @@ thumb_loop:
       /* CPU stopped or switch to IRQ handler */
       collapse_flags();
   }
+}
+
+void execute_arm(u32 cycles)
+{
+  execute_arm_internal(cycles, false);
+}
+
+u32 function_cc execute_arm_vram(u32 cycles)
+{
+  /* VRAM instructions are never cached. This also covers code rewritten by
+   * scalar stores, store-multiple instructions, DMA and mirrored addresses. */
+  u32 result;
+  if ((s32)cycles <= 0) {
+    result = update_gba(cycles);
+    if (!completed_frame(result) && (reg[REG_PC] >> 24) == 0x06)
+      result = execute_arm_internal(cycles_to_run(result), true);
+  } else {
+    result = execute_arm_internal(cycles, true);
+  }
+#ifdef HAVE_DYNAREC
+  /* Interpreted routines may write I/EWRAM without the JIT's SMC handlers.
+   * Discard those translations before returning to compiled execution. */
+  flush_translation_cache_ram();
+#endif
+  return result;
 }
 
 void init_cpu(void)

@@ -338,6 +338,29 @@ defsymbl(execute_swi)
   ret
 .size execute_swi, .-execute_swi
 
+// The cached stub supplies the actual VRAM PC, including for direct exits.
+// No VRAM opcodes are translated, so writes/DMA cannot leave stale code.
+defsymbl(execute_vram_arm)
+  str w0, [reg_base, #REG_PC]
+  consolidate_flags(w0)
+  bic w0, w0, #0x20
+  b execute_vram_common
+
+defsymbl(execute_vram_thumb)
+  str w0, [reg_base, #REG_PC]
+  consolidate_flags(w0)
+  orr w0, w0, #0x20
+
+execute_vram_common:
+  str w0, [reg_base, #REG_CPSR]
+  store_registers()
+  mov w0, reg_cycles
+  bl execute_arm_vram
+  tbnz w0, #31, return_to_main
+  and reg_cycles, w0, #0x7fff
+  ldr w0, [reg_base, #REG_PC]
+  b lookup_pc
+
 defsymbl(execute_arm_translate_internal)
   // save registers that will be clobbered
   sub sp, sp, #96
@@ -420,6 +443,21 @@ ld_iwram_##load_type:                     /* IWRAM area                    */;\
   ret                                                                        ;\
                                                                              ;\
 ld_ioram_##load_type:                     /* I/O RAM area                  */;\
+  /* Hot readable registers live below 0x10 (DISP/VCOUNT) or in 0x100..0x3ff
+   * (timers, keys, IRQ, serial).  Only 0x10..0xff and out-of-range I/O need
+   * the hardware-aware slow reader.  Test bits 4..23 first so VCOUNT keeps a
+   * two-instruction dispatch; bits 8..9 distinguish 0x100..0x3ff. */         ;\
+  tst w0, #0x00fffff0                                                       ;\
+  b.ne 8f                                                                    ;\
+  and w0, w0, #(0x3ff)                                                       ;\
+  add x3, reg_base, #(IOREG_OFF)                                             ;\
+  ldop w0, [x3, x0]                                                          ;\
+  ret                                                                        ;\
+8:                                                                           ;\
+  tst w0, #0x00fffc00                     /* >= 0x400 is not a mirror      */;\
+  b.ne ld_slow_##load_type                                                   ;\
+  tst w0, #0x300                                                             ;\
+  b.eq ld_slow_##load_type                                                   ;\
   and w0, w0, #(0x3ff)                                                       ;\
   add x3, reg_base, #(IOREG_OFF)                                             ;\
   ldop w0, [x3, x0]                                                          ;\
