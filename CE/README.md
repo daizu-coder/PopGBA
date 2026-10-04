@@ -66,6 +66,8 @@ https://github.com/daizu-coder/PopGBA/releases/latest
 
 - SHARP Brain PW-G5300
 
+PopGBA を CeOpener や CERestorer から起動すると、PW-G5300 で、終了後に画面が真っ暗になる、または操作を受け付けなくなることがありました。USB ケーブルと電池を抜いてから入れ直すと戻りました。
+
 ## クレジット
 
 - **gpSP（gameplaySP）** GBA エミュレーションコア — 原作者は **Exophase** 氏。GPL-2.0
