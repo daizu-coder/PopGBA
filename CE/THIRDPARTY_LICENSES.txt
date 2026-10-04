@@ -34,8 +34,8 @@ libretro/libretro.c, bios_data.S, arm/arm_stub.S, and their headers,
 including the dynarec headers arm/arm_emit.h and arm/arm_codegen.h /
 arm/arm_dpimacros.h - the last two carry their own MIT notice; see
 below).
-Upstream: https://github.com/libretro/gpsp, commit 8d268a6
-(2026-08-25). gameplaySP ("gpSP"), Copyright (C) 2006 Exophase
+Upstream: https://github.com/libretro/gpsp, commit 5819380
+(2026-09-19). gameplaySP ("gpSP"), Copyright (C) 2006 Exophase
 <exophase@gmail.com> and later contributors (the libretro edition is
 maintained by David Guillen Fandos and libretro contributors).
 License: GNU General Public License, version 2 (GPL-2.0), same terms

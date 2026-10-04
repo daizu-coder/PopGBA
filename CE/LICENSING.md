@@ -22,7 +22,7 @@ PopGBA は、ゲームボーイアドバンスのエミュレータ [gpSP](https
 
 ## 2. gpSP 本体(上流のファイル)
 
-リポジトリ直下のファイルは、上流の [libretro/gpsp](https://github.com/libretro/gpsp) のコミット `8d268a6`(2026-08-25)を元にしています。gpSP は Exophase 氏の作で、libretro 版は David Guillen Fandos 氏と libretro のコントリビューターが保守しています。
+リポジトリ直下のファイルは、上流の [libretro/gpsp](https://github.com/libretro/gpsp) のコミット `5819380`(2026-09-19)を元にしています。gpSP は Exophase 氏の作で、libretro 版は David Guillen Fandos 氏と libretro のコントリビューターが保守しています。
 
 `AppMain.exe` に入る gpSP のファイルは、`CE/Makefile` の `SOURCES_CC` と `SOURCES_CORE` にあるものです。
 

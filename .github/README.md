@@ -38,7 +38,7 @@ PopGBA 全体は、上流の gpSP と同じ条件の GNU General Public License 
 
 **使い方やビルドの説明は [CE/README.md](../CE/README.md)、ライセンスの詳しい説明は [CE/LICENSING.md](../CE/LICENSING.md) にあります。**
 
-このリポジトリは、上流の [libretro/gpsp](https://github.com/libretro/gpsp) のコミット `8d268a6` を元にしています。直下の `README.md` は上流の gpSP の説明で、PopGBA の説明ではありません。
+このリポジトリは、上流の [libretro/gpsp](https://github.com/libretro/gpsp) のコミット `5819380`(2026-09-19)を元にしています。直下の `README.md` は上流の gpSP の説明で、PopGBA の説明ではありません。
 
 ## クレジット
 
