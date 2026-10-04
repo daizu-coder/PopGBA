@@ -73,7 +73,7 @@ static int         s_frameSkipConsecutive = 0; /* frames skipped in a row since 
  * that crashed/hung under the JIT with the old CE-veneer core - Sweet
  * Cookie Pie (ABGJ), Tales of Phantasia (AN8J) and SMT Devil Children
  * Honoo no Sho (BDHJ) - are all confirmed working on hardware after the
- * move to the current libretro/gpsp core (upstream commit 8d268a6):
+ * move to the then-current libretro/gpsp core (upstream commit 8d268a6):
  * its THUMB translation + R11 reg_base far-call ABI + init_bios_hooks()
  * VBlankIntrWait handling fixes the systematic dynarec bug that repeated
  * patching of the older core could not (see the dev notes
@@ -152,7 +152,8 @@ int CeVideoIsDynarecEnabled(void)
 }
 
 /* gpSP's own libretro core-option keys (see libretro_core_options.h and
- * check_variables() in libretro.c) - gpSP has no region option (GBA has
+ * check_variables() in libretro.c), plus "gpsp_save_method", which the
+ * current core no longer has (see below) - gpSP has no region option (GBA has
  * no PAL/NTSC region concept the way Genesis/SNES do), so unlike the
  * sister PopSG port there is no third "*_region" key to answer
  * here. */
@@ -187,14 +188,14 @@ int CeVideoEnvGetVariable(const char *key, const char **outValue)
 
     if (strcmp(key, "gpsp_save_method") == 0)
     {
-        /* Forced to "libretro" (not user-configurable) rather than the
-         * core's own default "gpSP": this makes retro_get_memory_data/
-         * size(RETRO_MEMORY_SAVE_RAM) return the cart's SRAM/Flash/EEPROM
-         * buffer directly (see use_libretro_save_method in libretro.c),
-         * which is what ce_main.c's CeLoadSram/CeSaveSram already expect -
-         * same generic RETRO_MEMORY_SAVE_RAM path every sister CE port
-         * uses. The "gpSP" native format would need its own file-I/O
-         * plumbing this port doesn't implement. */
+        /* The current core has no "gpsp_save_method" option (nor a
+         * use_libretro_save_method switch) and never asks for this key,
+         * so this answer changes nothing. retro_get_memory_data/
+         * size(RETRO_MEMORY_SAVE_RAM) in libretro.c always return the
+         * cart's SRAM/Flash/EEPROM buffer (gamepak_backup, a fixed
+         * 128KiB) directly, which is what ce_main.c's CeLoadSram/
+         * CeSaveSram already expect - same generic RETRO_MEMORY_SAVE_RAM
+         * path every sister CE port uses. */
         *outValue = "libretro";
         return 1;
     }

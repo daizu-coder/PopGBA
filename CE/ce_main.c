@@ -356,9 +356,9 @@ static bool ce_environment(unsigned cmd, void *data)
 
     case RETRO_ENVIRONMENT_GET_VARIABLE:
     {
-        /* Video Config's color-correction/frame-skip/save-method settings
+        /* Video Config's color-correction/frame-skip settings
          * (ce_video.c) ride the core's own existing core-options protocol
-         * (gpsp_color_correction / gpsp_frameskip / gpsp_save_method - see
+         * (gpsp_color_correction / gpsp_frameskip - see
          * check_variables() in libretro.c) instead of a new side channel -
          * CE just needs to answer these queries. */
         struct retro_variable *var = (struct retro_variable *)data;
