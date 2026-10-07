@@ -549,13 +549,14 @@ static int PickRom(HWND owner, wchar_t *outPath, size_t outPathCount)
 /* ------------------------------------------------------------------ */
 
 /* What the .srm file holds (last full load or save), so the 30-second
- * autosave (CeAutoSaveSram) can skip the write when the game hasn't
- * changed its SRAM since. On a real PW-G5300 the write's fclose() alone
- * took 144-1925ms on the main thread (2026-10-07), long enough to drain
- * the audio ring and cut the sound out for up to ~1.8s every 30s even
- * when nothing had changed. The core's save RAM is always 0x20000 bytes
- * (retro_get_memory_size() in libretro.c). s_srmShadowValid is 0 when
- * the file's content isn't known (a short read, a failed write). */
+ * autosave and the exit save (CeSaveSramIfChanged) can skip the write
+ * when the game hasn't changed its SRAM since. On a real PW-G5300 the
+ * write's fclose() alone took 144-1925ms on the main thread (2026-10-07),
+ * long enough to drain the audio ring and cut the sound out for up to
+ * ~1.8s every 30s even when nothing had changed. The core's save RAM is
+ * always 0x20000 bytes (retro_get_memory_size() in libretro.c).
+ * s_srmShadowValid is 0 when the file's content isn't known (a short
+ * read, a failed write). */
 static unsigned char s_srmShadow[0x20000];
 static int s_srmShadowValid = 0;
 
@@ -615,7 +616,8 @@ static void CeLoadSram(void)
  * being the live one (File>Open loading a different ROM, or app exit),
  * plus a pause-time checkpoint (ShowMainMenuDialog) and a periodic
  * autosave (WinMain's loop), same three checkpoints the sister
- * PopSNES port settled on. */
+ * PopSNES port settled on. The autosave and app exit go through
+ * CeSaveSramIfChanged() below. */
 static void CeSaveSram(void)
 {
     void *sram = retro_get_memory_data(RETRO_MEMORY_SAVE_RAM);
@@ -646,11 +648,13 @@ static void CeSaveSram(void)
     CeLog("CeSaveSram: saved %lu bytes", (unsigned long)size);
 }
 
-/* WinMain's 30-second autosave: same as CeSaveSram(), but skips the write
- * when the SRAM still matches what the .srm file holds (see s_srmShadow).
- * The pause/exit/ROM-switch checkpoints keep calling CeSaveSram() and
- * always write. */
-static void CeAutoSaveSram(void)
+/* WinMain's 30-second autosave and CeShutdown()'s exit save: same as
+ * CeSaveSram(), but skips the write when the SRAM still matches what the
+ * .srm file holds (see s_srmShadow). Exiting from the main menu always
+ * comes right after the menu's own pause-time save, so the exit write was
+ * a second copy of the same bytes. The pause and ROM-switch checkpoints
+ * keep calling CeSaveSram() and always write. */
+static void CeSaveSramIfChanged(void)
 {
     void *sram = retro_get_memory_data(RETRO_MEMORY_SAVE_RAM);
     size_t size = retro_get_memory_size(RETRO_MEMORY_SAVE_RAM);
@@ -2038,7 +2042,12 @@ static void CeShutdown(int exitCode)
      * down a thread still mid-waveOutWrite. */
     CeAudioStop();
     if (g_romLoaded)
-        CeSaveSram();
+    {
+        if (s_restartResumeThread)
+            CeSaveSram(); /* dynarec-safe ROM switch (RestartProcess()) - always writes, like the in-process switch in LoadRomPath() */
+        else
+            CeSaveSramIfChanged();
+    }
     retro_unload_game();
     retro_deinit(); /* dynarec translation caches are .bss static arrays now (no free needed); kept before the s_restartResumeThread resume below anyway - see that comment */
 
@@ -2432,7 +2441,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLin
          * straight-through play session that never touches the menu at
          * all. ~30s is arbitrary (same margin the sister PopSNES
          * port uses) - frequent enough to bound how much an in-game save
-         * could be lost. CeAutoSaveSram() only writes when the SRAM has
+         * could be lost. CeSaveSramIfChanged() only writes when the SRAM has
          * changed: the write stalls this loop long enough to cut the
          * sound out (see s_srmShadow). */
         {
@@ -2442,7 +2451,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLin
                 s_lastSramSaveTick = now; /* first frame of gameplay - start the 30s window now, not at an immediate save */
             else if (now - s_lastSramSaveTick >= 30000)
             {
-                CeAutoSaveSram();
+                CeSaveSramIfChanged();
                 s_lastSramSaveTick = now;
             }
         }
