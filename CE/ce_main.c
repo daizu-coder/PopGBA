@@ -560,6 +560,16 @@ static int PickRom(HWND owner, wchar_t *outPath, size_t outPathCount)
 static unsigned char s_srmShadow[0x20000];
 static int s_srmShadowValid = 0;
 
+/* 1 when this game's .srm file exists (CeLoadSram opened it, or
+ * CeSaveSram wrote it). While it doesn't, s_srmShadow holds the SRAM as
+ * it was right after loading, and every checkpoint (pause, ROM switch,
+ * autosave, exit) writes only once the game has changed it, so a game
+ * the player never saved in doesn't get a .srm - the core reports its
+ * full 0x20000 bytes for every game, even one with no save at all.
+ * Once the file exists, the pause and ROM-switch checkpoints write every
+ * time (CeSaveSramCheckpoint) - same as the sister PopSG port's v1.0.6. */
+static int s_srmFileExists = 0;
+
 static void CeSramRemember(const void *sram, size_t size)
 {
     if (size <= sizeof(s_srmShadow))
@@ -589,6 +599,7 @@ static void CeLoadSram(void)
     size_t got;
 
     s_srmShadowValid = 0;
+    s_srmFileExists = 0;
     if (!sram || size == 0)
         return; /* this game has no battery-backed SRAM */
 
@@ -597,9 +608,10 @@ static void CeLoadSram(void)
     if (!f)
     {
         CeLog("CeLoadSram: no .srm file yet (new game, or none saved)");
-        CeSramRemember(sram, size); /* nothing for the autosave to write until the game changes it */
+        CeSramRemember(sram, size); /* no checkpoint writes until the game changes it (s_srmFileExists) */
         return;
     }
+    s_srmFileExists = 1;
 
     /* Read at most `size` bytes - a mismatched-size .srm (shouldn't
      * happen for a given ROM, but don't overrun the core's buffer if it
@@ -617,7 +629,8 @@ static void CeLoadSram(void)
  * plus a pause-time checkpoint (ShowMainMenuDialog) and a periodic
  * autosave (WinMain's loop), same three checkpoints the sister
  * PopSNES port settled on. The autosave and app exit go through
- * CeSaveSramIfChanged() below. */
+ * CeSaveSramIfChanged(), the pause and ROM-switch checkpoints through
+ * CeSaveSramCheckpoint(), both below. */
 static void CeSaveSram(void)
 {
     void *sram = retro_get_memory_data(RETRO_MEMORY_SAVE_RAM);
@@ -641,6 +654,7 @@ static void CeSaveSram(void)
 
     wrote = fwrite(sram, 1, size, f);
     closeErr = fclose(f);
+    s_srmFileExists = 1; /* "wb" created or truncated it, even if the write then failed */
     if (wrote == size && closeErr == 0)
         CeSramRemember(sram, size);
     else
@@ -650,10 +664,11 @@ static void CeSaveSram(void)
 
 /* WinMain's 30-second autosave and CeShutdown()'s exit save: same as
  * CeSaveSram(), but skips the write when the SRAM still matches what the
- * .srm file holds (see s_srmShadow). Exiting from the main menu always
- * comes right after the menu's own pause-time save, so the exit write was
- * a second copy of the same bytes. The pause and ROM-switch checkpoints
- * keep calling CeSaveSram() and always write. */
+ * .srm file holds (see s_srmShadow) - or, while there is no .srm yet,
+ * what the SRAM held right after loading. Exiting from the main menu
+ * always comes right after the menu's own pause-time save, so the exit
+ * write was a second copy of the same bytes. The pause and ROM-switch
+ * checkpoints go through CeSaveSramCheckpoint() below. */
 static void CeSaveSramIfChanged(void)
 {
     void *sram = retro_get_memory_data(RETRO_MEMORY_SAVE_RAM);
@@ -663,6 +678,19 @@ static void CeSaveSramIfChanged(void)
         memcmp(s_srmShadow, sram, size) == 0)
         return;
     CeSaveSram();
+}
+
+/* The pause-time save (ShowMainMenuDialog) and the ROM-switch saves
+ * (LoadRomPath's in-process switch, CeShutdown's RestartProcess() path):
+ * always write while the game's .srm exists, as before; while it
+ * doesn't, write only if the SRAM changed since loading (see
+ * s_srmFileExists). */
+static void CeSaveSramCheckpoint(void)
+{
+    if (s_srmFileExists)
+        CeSaveSram();
+    else
+        CeSaveSramIfChanged();
 }
 
 /* Paints "Loading..."/"読み込み中..." directly onto hwnd - whichever
@@ -723,7 +751,7 @@ static int LoadRomPath(HWND hwnd, const wchar_t *romPath)
 
     if (g_romLoaded)
     {
-        CeSaveSram(); /* g_romPath/the core's SRAM still refer to the *previous* game here - new one isn't loaded yet */
+        CeSaveSramCheckpoint(); /* g_romPath/the core's SRAM/s_srmFileExists still refer to the *previous* game here - new one isn't loaded yet */
         retro_unload_game();
     }
 
@@ -1925,8 +1953,9 @@ static void ShowMainMenuDialog(HWND hwnd)
          * so relying only on those two checkpoints misses that case
          * entirely (lesson from the sister PopSNES port's round 9).
          * Opening the touch-to-reveal menu is a frequent, cheap, natural
-         * checkpoint to also save at. */
-        CeSaveSram();
+         * checkpoint to also save at. Writes only if the game changed
+         * its SRAM while it has no .srm yet (CeSaveSramCheckpoint). */
+        CeSaveSramCheckpoint();
     }
 
     /* Only forces a repaint here when there's no ROM loaded yet (the
@@ -2044,7 +2073,7 @@ static void CeShutdown(int exitCode)
     if (g_romLoaded)
     {
         if (s_restartResumeThread)
-            CeSaveSram(); /* dynarec-safe ROM switch (RestartProcess()) - always writes, like the in-process switch in LoadRomPath() */
+            CeSaveSramCheckpoint(); /* dynarec-safe ROM switch (RestartProcess()) - same as the in-process switch in LoadRomPath() */
         else
             CeSaveSramIfChanged();
     }
