@@ -22,6 +22,7 @@ tools/generate_cc_lut
 !/.github/README.md
 !/CE/README.md
 !/CE/LICENSING.md
+!/CE/NOTES.md
 
 # Game ROMs and BIOS images (never distributed)
 *.gba
