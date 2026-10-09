@@ -38,7 +38,8 @@ PopGBA 全体は、上流の gpSP と同じ条件の GNU General Public License 
 
 ゲームの ROM と、ゲームボーイアドバンス本体の BIOS(`gba_bios.bin`)は同梱していません。BIOS を用意しなくても、ゲームは動きます。
 
-## ビルド方法、使用方法 → [CE/README.md](../CE/README.md)
+## ビルド方法、使用方法
+(→ [CE/README.md](../CE/README.md) にあります)
 
 ## クレジット
 
