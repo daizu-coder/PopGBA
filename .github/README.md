@@ -34,14 +34,11 @@ Brainへのインストールは[アプリの起動方法](https://brain.fandom.
 ## ライセンスと商標
 PopGBA 全体は、上流の gpSP と同じ条件の GNU General Public License バージョン2(GPL-2.0)で配布します。
 
-「ゲームボーイアドバンス」「Game Boy Advance」「Nintendo」「任天堂」は任天堂の商標、「SHARP」「Brain」はシャープ株式会社の商標です。PopGBA は、これらの権利者とは関係ありません。
-
-ライセンスの詳しい説明は [CE/LICENSING.md](../CE/LICENSING.md) にあります。
+「ゲームボーイアドバンス」「Game Boy Advance」「Nintendo」「任天堂」は任天堂の商標、「SHARP」「Brain」はシャープ株式会社の商標です。PopGBA は、これらの権利者とは関係ありません。ライセンスの詳しい説明は [CE/LICENSING.md](../CE/LICENSING.md) にあります。
 
 ゲームの ROM と、ゲームボーイアドバンス本体の BIOS(`gba_bios.bin`)は同梱していません。BIOS を用意しなくても、ゲームは動きます。
 
-## ビルド方法、使用方法
-ビルド方法と使用方法は [CE/README.md](../CE/README.md) をご覧ください。
+## ビルド方法、使用方法 → [CE/README.md](../CE/README.md)
 
 ## クレジット
 
