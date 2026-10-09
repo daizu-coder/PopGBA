@@ -25,11 +25,20 @@ https://github.com/daizu-coder/PopGBA/releases/latest
 
 ## ビルド方法
 
-- SDK / トゥールチェーン
-  * cegcc（`arm-mingw32ce-*`）— Windows CE / ARM 向けクロスコンパイラ
-- ビルド手順
-  * `CE/` ディレクトリに移動し、`make && make strip` を実行（エミュレータ本体は、リポジトリ直下の上流 gpSP のソースをそのまま使います）
-  * `CE/AppMain.exe` が生成されます（依存 DLL は `COREDLL.dll` のみ）
+- ツール
+  * cegcc(`arm-mingw32ce-*`、`/opt/cegcc`)— Windows CE / ARM 向けのクロスコンパイラ。製作者は WSL(Windows 上の Linux)でビルドしています
+- サブモジュールは使っていません
+- 手順
+  * `CE/` で `make && make strip` を実行します
+  * `CE/AppMain.exe` ができます(依存する DLL は `COREDLL.dll` だけ)
+  * エミュレータ本体は、リポジトリ直下の上流 gpSP のソースをそのまま使います
+
+```sh
+git clone https://github.com/daizu-coder/PopGBA.git
+cd PopGBA/CE
+make
+make strip
+```
 
 ## 使用方法
 
