@@ -14,12 +14,14 @@
  * synthesizing a fixed tone and Sleep()-ing for its duration like the
  * reference samples do.
  *
- * This device's audio output is mono (user-confirmed, 2026-08-01), and
- * the user wants the output format itself configurable (16-bit or
- * 8-bit; 8000/11000/22000/33000/44000 Hz) via Sound Config - none of
- * which matches the SNES core's native output rate (typically ~32000Hz,
- * whatever retro_get_system_av_info() actually reports), so a real
- * resampler is required, not just a format relabel. The core's L/R
+ * This device's audio output is mono (confirmed on hardware by the
+ * sister PopSNES port, 2026-08-01), and the user wants the output format
+ * itself configurable (16-bit or 8-bit; 8000/11000/22000/33000/44000 Hz)
+ * via Sound Config - none of which matches the core's native output rate
+ * (65536Hz, whatever retro_get_system_av_info() actually reports - this
+ * frontend doesn't answer the core's gpsp_sound_rate option, so it stays
+ * at GBA_SOUND_FREQUENCY), so a real resampler is required, not just a
+ * format relabel. The core's L/R
  * stereo stream is downmixed to mono and resampled to the configured
  * output rate using a 16.16 fixed-point linear interpolator - same
  * accumulator style as ce_gapi.c's blit scaler, and for the same
@@ -44,8 +46,8 @@
  * their byte-based rings. Larger = more cushion against this device's
  * irregular retro_run() timing / slow-frame bursts (the "audio
  * underrun" log), at the cost of more audio lag behind video. Default
- * 24576 mono int16 samples (~768ms at 32kHz / ~558ms at the 44kHz
- * native output); raised from 8192 in an earlier round.
+ * 24576 mono int16 samples (~375ms at the default Native 65536Hz output /
+ * ~558ms at 44000Hz); raised from 8192 in an earlier round.
  *
  * HW-verified 2026-08-31: with this 24576 default plus the frame-pacer
  * catch-up (ce_main.c) and the underrun fade (below), at Frame Skip 4 the
@@ -58,7 +60,7 @@
 #define CE_AUDIO_RING_FRAMES_MAX     49152 /* 96KB static */
 #define CE_AUDIO_RING_FRAMES_DEFAULT 24576
 #define CE_AUDIO_NUM_BUFFERS   4
-#define CE_AUDIO_BUFFER_FRAMES 1024  /* mono samples/buffer - ~32ms/buffer at 32kHz */
+#define CE_AUDIO_BUFFER_FRAMES 1024  /* mono samples/buffer - ~16ms/buffer at the native 65536Hz */
 
 /* Selectable ring sizes (mono int16 samples): 1/4x, 1/2x, 1x, 2x of the
  * default. The spinner's readout shows KB (frames * 2 bytes / 1024). */
@@ -108,8 +110,8 @@ static const unsigned kRateChoices[] = { 8000, 11000, 22000, 33000, 44000 };
 #define CE_RATE_CHOICE_COUNT (sizeof(kRateChoices) / sizeof(kRateChoices[0]))
 static int s_outputRate = 33000;  /* used only when s_useNativeRate is off */
 
-/* "Native" - output at whatever rate the SNES core itself reports
- * (retro_get_system_av_info(), typically ~32000Hz - none of the fixed
+/* "Native" - output at whatever rate the core itself reports
+ * (retro_get_system_av_info(), 65536Hz here - none of the fixed
  * choices above match it exactly) instead of one of the fixed choices.
  * At native rate s_resampleStep works out to exactly 0x10000 (1.0), so
  * the resampler below degenerates into a pure 1:1 copy - this is also
@@ -442,7 +444,8 @@ void CeAudioStop(void)
  * only relevant when reopening a device that's already running (a real
  * rate/bit-depth change mid-session), not the first open for a freshly
  * loaded ROM. This targets the *truncation* click specifically; the
- * user-reported pop on every bit-depth switch (2026-08-01) may instead
+ * pop on every bit-depth switch that the sister PopSNES port's user
+ * reported (2026-08-01) may instead
  * (or additionally) come from this device's DAC/codec itself reacting to
  * the format renegotiation inside waveOutClose/waveOutOpen, which is not
  * something software on this side of the API can suppress - see
@@ -493,7 +496,7 @@ static void OpenAudioDevice(void)
 
     memset(&wfx, 0, sizeof(wfx));
     wfx.wFormatTag      = WAVE_FORMAT_PCM;
-    wfx.nChannels       = 1; /* mono - this device's audio output, user-confirmed 2026-08-01 */
+    wfx.nChannels       = 1; /* mono - this device's audio output, confirmed on hardware by the sister PopSNES port, 2026-08-01 */
     wfx.nSamplesPerSec  = (DWORD)effectiveRate;
     wfx.wBitsPerSample  = (WORD)s_bitDepth;
     wfx.nBlockAlign     = (WORD)(wfx.wBitsPerSample / 8);
@@ -602,10 +605,10 @@ void CeAudioInit(void)
     RecomputeVolumeScale();
 }
 
-/* Registry-based persistence (samDesired/RegFlushKey lessons of round
- * 3/8 - see the dev notes) didn't survive an actual power-off on this
- * device (round 9 user report) - now goes through ce_config.c's plain
- * config file instead, same as ce_input.c/ce_video.c. */
+/* Registry-based persistence (samDesired/RegFlushKey lessons of the
+ * sister PopSNES port's rounds 3/8) didn't survive an actual power-off on
+ * this device (that port's round 9 user report) - now goes through
+ * ce_config.c's plain config file instead, same as ce_input.c/ce_video.c. */
 static void CeAudioSaveConfig(void)
 {
     CeConfigSetInt("SoundVolume", s_volumeLevel);

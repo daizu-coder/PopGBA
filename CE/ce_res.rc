@@ -247,16 +247,18 @@ END
 
 /* Custom ROM picker (see ce_fileopen.c) - replaces GetOpenFileNameW().
  * Folder-list + up-navigation ("<" as the first entry) only, driven by
- * the physical direction keys and the decide/cancel keys. 190x104 like
- * every settings dialog. IDC_FO_LIST carries LBS_OWNERDRAWFIXED |
+ * the physical direction keys and the decide/cancel keys. 190x108 (190
+ * wide like every settings dialog). IDC_FO_LIST carries LBS_OWNERDRAWFIXED |
  * LBS_HASSTRINGS so ROM/directory names with Japanese characters draw
- * with the Shinonome bitmap font (ce_fileopen.c's WM_MEASUREITEM/
+ * with the bitmap font (Galmuri14 by default, Shinonome 16 with
+ * CE_FONT=shinonome - see CE/Makefile) (ce_fileopen.c's WM_MEASUREITEM/
  * WM_DRAWITEM) instead of tofu-ing under a TrueType face that no longer
  * exists. LBS_HASSTRINGS is required alongside LBS_OWNERDRAWFIXED -
  * without it an owner-draw listbox does NOT retain the LB_ADDSTRING
  * strings and LB_GETTEXT comes back empty (real-hardware-confirmed by
- * the sister ports). Listbox height 64 (trimmed from 66 - at 66 the
- * last visible row came out partially clipped on real hardware). */
+ * the sister ports). Listbox height 68 - see the 2026-09-27 note below
+ * (it had been 64, trimmed from 66 because at 66 the last visible row
+ * came out partially clipped on real hardware). */
 IDD_FILEOPEN DIALOG 0, 0, 190, 108
 STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Select ROM"

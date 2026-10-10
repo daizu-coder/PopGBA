@@ -217,7 +217,8 @@ static void RETRO_CALLCONV ce_retro_log(enum retro_log_level level, const char *
 
 /* Converts an existing wide-char path (the exe's own directory, the BIOS
  * system dir, or a picked ROM file) to a narrow string safe to hand to
- * gpSP's fopen()-based file I/O (common.h's file_open() macro). Encoded
+ * the core's file I/O (filestream_open(), which CE/ce_filestream.c
+ * implements with fopen()). Encoded
  * as CP_UTF8, decoded back to wide by ce_fopen_utf8() (compat/stdio.h)
  * instead of the CRT's own fopen() doing a lossy CP_ACP conversion
  * internally - see compat/stdio.h's header comment for the full history

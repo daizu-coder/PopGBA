@@ -69,15 +69,14 @@ static int         s_frameSkipConsecutive = 0; /* frames skipped in a row since 
 /* Dynamic recompiler (JIT) toggle - maps to the core's gpsp_drc core
  * option (libretro_core_options.h, #if defined(HAVE_DYNAREC) - this
  * build now defines it, see CE/Makefile and the dev notes' dynarec round).
- * Default ON (round 59, restoring round 43's intent): the three JP ROMs
+ * Default ON (round 60, restoring round 43's intent): the three JP ROMs
  * that crashed/hung under the JIT with the old CE-veneer core - Sweet
  * Cookie Pie (ABGJ), Tales of Phantasia (AN8J) and SMT Devil Children
  * Honoo no Sho (BDHJ) - are all confirmed working on hardware after the
- * move to the then-current libretro/gpsp core (upstream commit 8d268a6):
- * its THUMB translation + R11 reg_base far-call ABI + init_bios_hooks()
- * VBlankIntrWait handling fixes the systematic dynarec bug that repeated
- * patching of the older core could not (see the dev notes
- * rounds 54-59). Interpreter fallback stays available: set
+ * move to the then-current libretro/gpsp core (upstream commit 8d268a6),
+ * where repeated patching of the older core had not fixed them. Which
+ * part of the newer core fixed them was not pinned down (see the dev
+ * notes rounds 54-60). Interpreter fallback stays available: set
  * "VideoDynarec=0" in PopGBA.cfg by hand (no Video Config dialog checkbox
  * - that dialog has no free row without a resize, see ce_res.rc).
  * CeConfigGetInt below uses this initializer only as the missing-key
@@ -124,10 +123,10 @@ void CeVideoInit(void)
           (int)s_scaleMode, s_colorCorrection, s_frameSkip, s_dynarec, CeLogIsEnabled());
 }
 
-/* Registry-based persistence (samDesired/RegFlushKey lessons of round
- * 3/8 - see the dev notes) didn't survive an actual power-off on this
- * device (round 9 user report) - now goes through ce_config.c's plain
- * config file instead, same as ce_input.c/ce_audio.c. */
+/* Registry-based persistence (samDesired/RegFlushKey lessons of the
+ * sister PopSNES port's rounds 3/8) didn't survive an actual power-off on
+ * this device (that port's round 9 user report) - now goes through
+ * ce_config.c's plain config file instead, same as ce_input.c/ce_audio.c. */
 static void CeVideoSaveConfig(void)
 {
     CeConfigSetInt("VideoScaleMode", (int)s_scaleMode);

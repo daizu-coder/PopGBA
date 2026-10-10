@@ -147,14 +147,16 @@ static const VkName kVkNames[] = {
     { VK_ESCAPE, L"Esc" },   { VK_OEM_MINUS, L"-" },
     /* This device's own dedicated hardware buttons, identified by the
      * user pressing each one while a remap was pending and reading back
-     * which VK_xx this scan landed on (2026-08-01): Voice = VK_DC,
+     * which VK_xx this scan landed on (the sister PopSNES port,
+     * 2026-08-01): Voice = VK_DC,
      * Function = VK_14, Forward = VK_21, Previous = VK_22. Labelled in
      * English per the button's own function, not what these VK codes
      * conventionally mean on a PC keyboard (VK_14/21/22 are Caps Lock/
      * PageUp/PageDown there) - that PC meaning is irrelevant on this
      * hardware. (Tried the device's own printed Japanese names here
      * first - rendered fine with DEFAULT_GUI_FONT, but the user reported
-     * the dialog got noticeably slower, 2026-08-01 round 9 - reverted to
+     * the dialog got noticeably slower, 2026-08-01, the sister PopSNES
+     * port's round 9 - reverted to
      * English and dropped the font switch below along with it.) */
     { 0xDC, L"Voice" },      { 0x14, L"Function" },
     { 0x21, L"Forward" },    { 0x22, L"Previous" },
@@ -210,7 +212,8 @@ static int s_waitingIndex = -1;
  * this device's dedicated decide/OK button kept self-assigning Enter
  * almost every time regardless (user report, 2026-08-08) - the likely
  * reason being that this particular button doesn't behave like an
- * ordinary keyboard key at the GetAsyncKeyState level at all (round 9's
+ * ordinary keyboard key at the GetAsyncKeyState level at all (the sister
+ * PopSNES port's round 9
  * "wired to synthesize the same input as a stylus tap" theory), so a
  * snapshot taken through GetAsyncKeyState can't be trusted to reflect
  * its real down/up state no matter how carefully it's timed - and every
@@ -263,9 +266,10 @@ static void CaptureKeyAsBinding(HWND hDlg, int index, int vk)
     EndWaitForKey(hDlg);
 }
 
-/* Registry-based persistence (samDesired/RegFlushKey lessons of round
- * 3/8 - see the dev notes) turned out not to survive an actual power-off on
- * this device (round 9 user report), so this now goes through
+/* Registry-based persistence (samDesired/RegFlushKey lessons of the
+ * sister PopSNES port's rounds 3/8) turned out not to survive an actual
+ * power-off on this device (that port's round 9 user report), so this
+ * now goes through
  * ce_config.c's plain config file instead - see that module's header
  * comment for why a real file write is the more dependable mechanism
  * here. */

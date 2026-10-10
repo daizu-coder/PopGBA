@@ -72,8 +72,9 @@ INCLUDES += -I$(COREROOT)/libretro/libretro-common/include
 CFLAGS  := $(ARCH_FLAGS) -O3 -fomit-frame-pointer -fno-strict-aliasing \
 	$(DEFINES) $(INCLUDES)
 
-# Escape hatch for one-off diagnostic builds without editing this file, e.g.
-#   make -C CE clean && make -C CE CE_EXTRA_CFLAGS=-DCE_JIT_TRACE
+# Escape hatch for one-off diagnostic builds without editing this file -
+# extra -D/-g flags go in CE_EXTRA_CFLAGS, e.g.
+#   make -C CE clean && make -C CE CE_EXTRA_CFLAGS='-DYOUR_FLAG'
 CFLAGS  += $(CE_EXTRA_CFLAGS)
 
 CXXFLAGS := $(CFLAGS) -fno-rtti -fno-exceptions -std=c++11

@@ -8,11 +8,12 @@
  * exists further down the include chain, so this uses #include_next to
  * pull it in unchanged and only overrides fopen().
  *
- * gpSP's own file_open() macro (common.h, non-PSP branch) is a plain
- * `fopen(filename, mode)` - load_bios()/load_gamepak_raw()/
- * load_backup()/save_backup() (gba_memory.c) all go through it with a
- * narrow path this port builds from a wchar_t one (WidePathToNarrow()
- * below, called for both the BIOS system dir and the picked ROM path).
+ * The core opens the BIOS and the ROM through libretro's
+ * filestream_open() (gba_memory.c's load_bios()/load_gamepak_raw()),
+ * which this port implements in CE/ce_filestream.c with a plain
+ * fopen() - so those reads land here, with a narrow path this port
+ * builds from a wchar_t one (ce_main.c's WidePathToNarrow(), called for
+ * both the BIOS system dir and the picked ROM path).
  * That narrow path used to go through GetShortPathNameW() (the FAT 8.3
  * short name, guaranteed pure ASCII) with a WideCharToMultiByte(CP_ACP,
  * ...) fallback, because a real-hardware log (2026-08-11) showed this

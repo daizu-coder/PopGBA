@@ -64,13 +64,14 @@ typedef struct
  * FillFileList() to pad the list out to a page-boundary-aligned count,
  * so paging to the final (possibly partial) page can actually land its
  * first real entry on the listbox's top row - see FillFileList()'s own
- * comment on the padding entries for why. Fixed at a real-hardware-
- * confirmed row count for IDC_FO_LIST's current height (ce_res.rc, 64
- * DLU - the same geometry the sister PopGB / PopNES ports
- * hardware-confirmed 6 visible rows for; the DLU-vs-pixel
- * vertical stretch on this device is why a hand-calculated count from
- * the 18px item height was unreliable). Re-verify if IDC_FO_LIST's
- * height changes. */
+ * comment on the padding entries for why. Fixed at the row count the
+ * sister PopPCE port hardware-confirmed for IDC_FO_LIST's current height
+ * (ce_res.rc, 68 DLU - raised from 64 to fit the Galmuri14 rows on
+ * PopPCE (2026-09-27); at 64 the sister PopGB / PopNES ports had
+ * hardware-confirmed 6 rows with the Shinonome font).
+ * The DLU-vs-pixel vertical stretch on this device is why a
+ * hand-calculated count from the item height (18px, 19px with Galmuri14)
+ * was unreliable. Re-verify if IDC_FO_LIST's height changes. */
 #define CE_FILELIST_PAGE_SIZE 6
 
 #define CE_MAX_FILE_ENTRIES 512
