@@ -99,8 +99,8 @@ static int s_bitDepth    = 16;    /* 8 or 16 */
  * "Fast" (zero-order hold / drop-sample - just repeats the latest
  * core-rate sample for every output slot, skipping the interpolation
  * multiply-and-shift below). Added on user request to A/B the two;
- * round-12 profiling (the dev notes) already showed the mixer itself
- * costs ~0-2ms/frame against a ~15-36ms retro_run budget, so this
+ * the sister PopSNES port's round-12 profiling already showed the mixer
+ * itself costs ~0-2ms/frame against a ~15-36ms retro_run budget, so this
  * is not expected to move the needle on overall frame time - it's
  * offered as a quality/cost trade-off in its own right, not a fix
  * for the CPU/PPU-bound slowdown. */
@@ -352,7 +352,7 @@ static DWORD WINAPI CeAudioThreadProc(LPVOID param)
              * up), retro_run() isn't being called at all, so the ring
              * *always* starves here - that's expected silence, not the
              * emulator falling behind, and counting/logging it as
-             * "underrun" made round-20's hardware logs impossible to
+             * "underrun" made earlier hardware logs impossible to
              * read (a single long settings-dialog visit could log
              * hundreds of these). Still play the silence (buf->data
              * below), just don't count it. */
