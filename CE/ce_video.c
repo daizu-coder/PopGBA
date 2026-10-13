@@ -41,14 +41,14 @@ static CeScaleMode s_scaleMode  = CE_SCALE_X2; /* matches pre-Video-Config behav
  * unanswered for this first bring-up (core falls back to its own
  * "disabled" default) rather than adding a second checkbox control. */
 static int         s_colorCorrection = 0;
-/* Frame Skip (ported unchanged from the sister PopSG port, which
- * widened the range to 30 to match that core's own FRAMESKIP_MAX): 0 =
- * off (never skips); 1..30 = the maximum number of consecutive frames the
- * core is allowed to skip while it's actually falling behind
+/* Frame Skip (ported unchanged from the sister PopSG port, range
+ * 0..30): 0 = off (never skips); 1..30 = the maximum number of
+ * consecutive frames the core is allowed to skip while it's actually
+ * falling behind
  * (gpsp_frameskip "auto" - the core's own audio-buffer-underrun signal,
  * see init_frameskip()/RETRO_ENVIRONMENT_SET_AUDIO_BUFFER_STATUS_CALLBACK
  * in libretro.c), enforced against the core's own fixed FRAMESKIP_MAX
- * (libretro.c, 30 - confirmed identical to PicoDrive's) by
+ * (libretro.c, 30; PicoDrive's is 60) by
  * CeVideoFrameSkipShouldForceRender()/NotifyRendered() below - see
  * ce_video.h and ce_main.c's WinMain loop. At 30 this dial's own cap and
  * the core's internal one coincide, so ShouldForceRender() never actually
