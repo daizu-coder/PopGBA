@@ -57,13 +57,16 @@ static int         s_colorCorrection = 0;
  * the "auto_threshold"/"fixed_interval" modes) are intentionally left
  * unanswered - this dial only ever requests plain "auto".
  *
- * Default is 4 (not 0): rounds 34/35's investigation established that on
+ * Default is 2 (not 0): rounds 34/35's investigation established that on
  * this device the emulator can't hit 59.73fps at frameskip 0 and that
  * frameskip is the only practical speed lever, so new installs ship with
- * it already on. Existing PopGBA.cfg files keep whatever VideoFrameSkip
+ * it already on. It was 4 up to v1.0.8; lowered to 2 in v1.0.9 after the
+ * author played at 2 on the PW-G5300 and found it comfortable, fighting
+ * games included (subjective, no log - see the dev notes for v1.0.9,
+ * 2026-10-12). Existing PopGBA.cfg files keep whatever VideoFrameSkip
  * they saved; a user who wants 0 can still dial it down in Video Config
  * and that choice persists. */
-static int         s_frameSkip  = 4;
+static int         s_frameSkip  = 2;
 static int         s_frameSkipConsecutive = 0; /* frames skipped in a row since the last real render - see CeVideoFrameSkipShouldForceRender/NotifyRendered */
 
 /* Dynamic recompiler (JIT) toggle - maps to the core's gpsp_drc core

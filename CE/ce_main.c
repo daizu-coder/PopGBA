@@ -180,14 +180,14 @@ static retro_audio_buffer_status_callback_t g_audioBuffStatusCb = NULL;
  * state from the pacer to the g_audioBuffStatusCb feed a few lines later,
  * where it forces the core's "underrun likely" flag so every catch-up
  * frame skips rendering regardless of the raw occupancy threshold. With
- * Frame Skip off (the default) g_audioBuffStatusCb is NULL, so this never
+ * Frame Skip off (0) g_audioBuffStatusCb is NULL, so this never
  * engages and existing behaviour is unchanged.
  *
  * HW-verified 2026-08-31 (Frame Skip 4 + this catch-up + ce_audio.c's
  * underrun fade + the 24576 ring default): audio underrun ~33/s -> 0.36/s
  * (below the rival "comparison" port's ~1.0/s), retro_run avg 25ms ->
- * 16ms (real-time reached), gap-entry step 270 -> 46. Frame Skip 0
- * (default) path is byte-for-byte unchanged - no regression. Full numbers
+ * 16ms (real-time reached), gap-entry step 270 -> 46. The Frame Skip 0
+ * path is byte-for-byte unchanged - no regression. Full numbers
  * in the dev notes round 34 / 34b. */
 #define CE_AUDIO_CATCHUP_LOW_PCT 45   /* enter catch-up below this ring occupancy % */
 #define CE_AUDIO_CATCHUP_OK_PCT  75   /* leave catch-up at/above this ring occupancy % */
