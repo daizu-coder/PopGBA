@@ -148,11 +148,6 @@ CeScaleMode CeVideoGetScaleMode(void)
     return s_scaleMode;
 }
 
-int CeVideoIsDynarecEnabled(void)
-{
-    return s_dynarec;
-}
-
 /* gpSP's own libretro core-option keys (see libretro_core_options.h and
  * check_variables() in libretro.c), plus "gpsp_save_method", which the
  * current core no longer has (see below) - gpSP has no region option (GBA has

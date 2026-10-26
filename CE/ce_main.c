@@ -34,6 +34,15 @@ static const wchar_t kWndClassName[] = CE_APP_WND_CLASS;
 static const wchar_t kMutexName[]    = CE_APP_MUTEX_NAME;
 static const wchar_t kAppTitle[]     = CE_APP_TITLE;
 
+/* gba_memory.h (core) - not included here, it pulls in all of common.h.
+ * LoadRomPath() uses these to reset the ROM buffers between two games
+ * and to log what the new game got - see there. */
+extern unsigned int gamepak_buffer_count; /* u32: 1MB ROM buffers allocated */
+extern unsigned int gamepak_size;         /* u32: ROM size in bytes */
+void memory_term(void);
+void init_gamepak_buffer(void);
+bool gamepak_must_swap(void);
+
 static HWND   g_hwnd     = NULL;
 static HANDLE g_mutex    = NULL;
 static volatile int g_running = 0;
@@ -44,14 +53,6 @@ static volatile int g_running = 0;
  * ce_res.rc's IDD_MSGBOX comment for why MessageBoxW() can't carry
  * Japanese text on this device any more. */
 static void CeShowMsgBox(HWND owner, const wchar_t *text);
-
-/* Set by RestartProcess() when a dynarec-safe ROM switch has spawned a
- * suspended relaunched instance; CeShutdown() resumes it (see that
- * function's comment for why the resume is deferred there instead of
- * happening immediately in RestartProcess()). NULL in the ordinary
- * (non-restart) shutdown path. */
-static HANDLE s_restartResumeThread  = NULL;
-static HANDLE s_restartResumeProcess = NULL;
 
 static wchar_t g_romPath[MAX_PATH] = L""; /* last successfully-loaded ROM's path, for save-state/SRAM file naming */
 
@@ -681,9 +682,8 @@ static void CeSaveSramIfChanged(void)
     CeSaveSram();
 }
 
-/* The pause-time save (ShowMainMenuDialog) and the ROM-switch saves
- * (LoadRomPath's in-process switch, CeShutdown's RestartProcess() path):
- * always write while the game's .srm exists, as before; while it
+/* The pause-time save (ShowMainMenuDialog) and the ROM-switch save
+ * (LoadRomPath, before unloading the previous game): always write while the game's .srm exists, as before; while it
  * doesn't, write only if the SRAM changed since loading (see
  * s_srmFileExists). */
 static void CeSaveSramCheckpoint(void)
@@ -697,7 +697,7 @@ static void CeSaveSramCheckpoint(void)
 /* Paints "Loading..."/"読み込み中..." directly onto hwnd - whichever
  * window is actually on screen at the call site below (the main menu
  * dialog during the interactive Open ROM flow, or the main window during
- * WinMain's command-line ROM-relaunch flow after RestartProcess()).
+ * WinMain's command-line ROM load).
  * Draws straight via GetDC/ReleaseDC instead of InvalidateRect+WM_PAINT:
  * nothing pumps hwnd's message queue again until the caller's blocking
  * retro_load_game() call returns (up to ~8s on hardware, see the dev notes),
@@ -737,8 +737,8 @@ static void CeShowLoadingScreen(HWND hwnd)
 /* Loads romPath directly into the core, in-process (unloading whatever
  * was running first, same as always). Shared by LoadRomFlow() (below,
  * after PickRom() gets a path interactively) and WinMain() (loading a
- * path handed to it on the command line by RestartProcess() below -
- * see that function's comment). Returns 1 on success, 0 if loading
+ * path handed to it on the command line - see the comment there).
+ * Returns 1 on success, 0 if loading
  * failed - a MessageBox already explains why in that case, and whatever
  * was running before (if anything) is left unloaded either way, matching
  * this function's one caller-independent contract. */
@@ -754,6 +754,22 @@ static int LoadRomPath(HWND hwnd, const wchar_t *romPath)
     {
         CeSaveSramCheckpoint(); /* g_romPath/the core's SRAM/s_srmFileExists still refer to the *previous* game here - new one isn't loaded yet */
         retro_unload_game();
+
+        /* Back to the state retro_init() left, as a fresh process (the
+         * old JIT-on switch path) had it: memory_term() closes the
+         * previous ROM file (load_gamepak_raw() would otherwise reopen
+         * over it and leak it) and frees the ROM buffers,
+         * init_gamepak_buffer() allocates them again and resets the
+         * ROM page LRU queue. Without the reset, load_gamepak_raw()
+         * evicts the previous game's pages from the queue and unmaps
+         * pages of the new game it has just mapped; the JIT's ROM reads
+         * (ld_rdmap_*, used when the whole ROM fits in the buffers)
+         * don't check for unmapped pages and crashed on them. Only after
+         * a successful load: a failed one never gets as far as using
+         * the queue. Nothing runs between here and the new game's
+         * remap of the ROM area. */
+        memory_term();
+        init_gamepak_buffer();
     }
 
     CeShowLoadingScreen(hwnd);
@@ -767,6 +783,7 @@ static int LoadRomPath(HWND hwnd, const wchar_t *romPath)
 
     if (!retro_load_game(&game))
     {
+        CeLog("LoadRomPath: ROM buffers %u MiB", gamepak_buffer_count);
         /* A missing or wrong gba_bios.bin never gets here - the core falls
          * back to its built-in open-source BIOS (see GET_SYSTEM_DIRECTORY
          * in ce_environment). What does fail is the ROM itself: the file
@@ -799,6 +816,9 @@ static int LoadRomPath(HWND hwnd, const wchar_t *romPath)
     CeLog("LoadRomPath: loaded, geometry=%ux%u fps=%.3f sample_rate=%.0f",
           avInfo.geometry.base_width, avInfo.geometry.base_height,
           avInfo.timing.fps, avInfo.timing.sample_rate);
+    CeLog("LoadRomPath: ROM %u KiB, ROM buffers %u MiB, %s",
+          gamepak_size / 1024, gamepak_buffer_count,
+          gamepak_must_swap() ? "paging (ROM does not fit)" : "whole ROM in buffers");
     CeAudioStart(avInfo.timing.sample_rate);
 
     if (avInfo.timing.fps > 0.0)
@@ -812,125 +832,28 @@ static int LoadRomPath(HWND hwnd, const wchar_t *romPath)
     return 1;
 }
 
-/* Relaunches this same .exe with cmdLine as its *entire* command line (no
- * quoting/argv splitting on either end - WinMain treats a non-empty
- * lpCmdLine as exactly one ROM path verbatim, see WinMain below), then
- * lets the new process take over. Used by LoadRomFlow() instead of an
- * in-process reload whenever the dynarec JIT is active - see that call
- * site's comment for why. (round 20 briefly added a second caller, a
- * silent no-ROM "warm-up" restart from WinMain meant to work around a
- * display-corruption bug - hardware-tested and found not to help, see
- * the dev notes' round 21, so that caller was removed again; kept this
- * generalized on a plain cmdLine string rather than reverting the
- * rename, since a future similar need may come up again.) Returns 1 if
- * the new process was successfully started (the caller should tear
- * itself down right after, e.g. via CeShutdown()); 0 if CreateProcessW
- * itself failed, in which case nothing has changed yet (mutex still
- * held, no new process) and the caller should fall back to continuing
- * in this same process instead. */
-static int RestartProcess(const wchar_t *cmdLine_in)
-{
-    wchar_t exePath[MAX_PATH];
-    wchar_t cmdLine[MAX_PATH];
-    STARTUPINFOW si;
-    PROCESS_INFORMATION pi;
-
-    if (!GetModuleFileNameW(NULL, exePath, MAX_PATH))
-    {
-        CeLog("RestartProcess: GetModuleFileNameW failed, error=%lu", (unsigned long)GetLastError());
-        return 0;
-    }
-
-    wcsncpy(cmdLine, cmdLine_in, MAX_PATH - 1);
-    cmdLine[MAX_PATH - 1] = L'\0';
-
-    memset(&si, 0, sizeof(si));
-    si.cb = sizeof(si);
-    memset(&pi, 0, sizeof(pi));
-
-    /* CREATE_SUSPENDED: the new process's main thread (and therefore its
-     * own WinMain/CreateMutexW call) doesn't run until ResumeThread() is
-     * called. That call is *not* made here: it's deferred to CeShutdown()
-     * (see this process's caller, LoadRomFlow(), which always calls
-     * CeShutdown() right after this function returns success), which
-     * resumes it only after this process has torn itself down via
-     * retro_deinit(). Historically (round 26, when the ~11MiB translation
-     * caches were a runtime combined VirtualAlloc in the since-removed
-     * CE/ce_dynarec_mmap.c) resuming immediately here let the new process
-     * try to grab its own ~11MiB while this old process still held its
-     * copy, intermittently starving it (logged: "combined VirtualAlloc
-     * FAILED ... error=8" = ERROR_NOT_ENOUGH_MEMORY) and hanging the new
-     * ROM a few frames in. The caches are now plain .bss static arrays
-     * committed at process load, so that specific race is gone, but the
-     * deferred-resume ordering is kept: it is harmless and still
-     * guarantees the old process is fully down before the new one runs.
-     *
-     * The mutex release below still has to happen *before* the deferred
-     * resume (not before this function returns) - the new instance's
-     * WinMain single-instance check runs as soon as its thread resumes,
-     * so it must never observe the mutex still held. CeShutdown() closes
-     * g_mutex further down its own teardown, after this release already
-     * ran and nulled it out, so that later close is a no-op - ordering
-     * between the two is not a concern. */
-    if (!CreateProcessW(exePath, cmdLine, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &si, &pi))
-    {
-        CeLog("RestartProcess: CreateProcessW failed, error=%lu", (unsigned long)GetLastError());
-        return 0;
-    }
-
-    if (g_mutex)
-    {
-        CloseHandle(g_mutex);
-        g_mutex = NULL; /* CeShutdown() no-ops its own CloseHandle when this is NULL */
-    }
-    s_restartResumeThread  = pi.hThread;
-    s_restartResumeProcess = pi.hProcess;
-    return 1;
-}
-
 /* Picks a ROM (via PickRom) and hands its path to the core. Safe to call
  * both for the first load and for File>Open while a game is already
  * running (unloads the previous game first). Returns 1 on success, 0 if
  * the user cancelled the picker or loading failed - in both failure
- * cases whatever was running before is left untouched. */
+ * cases whatever was running before is left untouched.
+ *
+ * Always switches in-process, with the dynarec JIT on or off. Up to
+ * v1.1.1 a switch with the JIT on relaunched AppMain.exe with the new
+ * ROM's path instead (RestartProcess(), dev notes rounds 14 and 26): on
+ * the pre-graft core a second in-process load hung in reset_gba(). The
+ * current core keeps no co-thread, and every retro_load_game() resets
+ * the translation caches in reset_gba() -> init_main()
+ * (init_dynarec_caches() + init_emitter(), synced via CacheSync()). The
+ * relaunch also dropped the low screen mode the Brain's add-on app
+ * launcher sets up on the PW-SH2/SH5, so the second ROM drew corrupted
+ * there. */
 static int LoadRomFlow(HWND hwnd)
 {
     wchar_t romPath[MAX_PATH];
 
     if (!PickRom(hwnd, romPath, MAX_PATH))
         return 0; /* cancelled/failed - PickRom already logged why */
-
-    if (g_romLoaded && CeVideoIsDynarecEnabled())
-    {
-        /* Switching ROMs in-process while the dynarec JIT is active is
-         * unsafe on this device: real-hardware testing found it
-         * reproducibly hangs/faults a few instructions into the new
-         * ROM's reset_gba() on every second-or-later load, regardless of
-         * which ROM or switch direction, and millisecond-timestamped
-         * per-instruction checkpoints traced the stall to real
-         * multi-second delays with no crash report - not a logic bug in
-         * the (trivial, verified-correct) code at that point. Several
-         * allocation-strategy fixes for the dynarec translation caches
-         * (free+realloc, then reuse-without-freeing) were ruled out one
-         * at a time, and the caches were ultimately switched to plain
-         * .bss static arrays with no runtime allocation object at all -
-         * the in-process second-load hang still reproduces, so the
-         * residual state is definitively NOT memory-management-related.
-         * Whatever state a session that has actually JIT-translated-and-
-         * executed code leaves behind, a fresh process doesn't have it.
-         * So: restart the whole app with the new ROM's
-         * path instead of reloading in-process. Interpreter-mode
-         * sessions (dynarec never ran) aren't affected by this bug at
-         * all and keep using the cheaper in-process LoadRomPath() below. */
-        if (RestartProcess(romPath))
-        {
-            CeLog("LoadRomFlow: restarting process for a dynarec-safe ROM switch");
-            CeShutdown(0); /* never returns */
-        }
-        CeLog("LoadRomFlow: process restart failed, falling back to in-process reload");
-        /* fall through - better to risk the known in-process issue than
-         * to leave the user stuck on "Open ROM" doing nothing at all. */
-    }
 
     return LoadRomPath(hwnd, romPath);
 }
@@ -2072,35 +1995,15 @@ static void CeShutdown(int exitCode)
      * down a thread still mid-waveOutWrite. */
     CeAudioStop();
     if (g_romLoaded)
-    {
-        if (s_restartResumeThread)
-            CeSaveSramCheckpoint(); /* dynarec-safe ROM switch (RestartProcess()) - same as the in-process switch in LoadRomPath() */
-        else
-            CeSaveSramIfChanged();
-    }
+        CeSaveSramIfChanged();
     retro_unload_game();
-    retro_deinit(); /* dynarec translation caches are .bss static arrays now (no free needed); kept before the s_restartResumeThread resume below anyway - see that comment */
+    retro_deinit(); /* dynarec translation caches are .bss static arrays now (no free needed) */
 
     GapiShutdown();
     CeShowShellChrome(g_hwnd);
 
     if (g_mutex)
         CloseHandle(g_mutex);
-
-    if (s_restartResumeThread)
-    {
-        /* RestartProcess() left a relaunched instance suspended instead
-         * of resuming it immediately - see that function's comment. Wake
-         * it only now, once this process has fully torn down (the ~11MiB
-         * dynarec caches are .bss so nothing to free, but the ordering
-         * kept the old round-26 VirtualAlloc race from ever recurring and
-         * still guarantees a clean handoff). */
-        ResumeThread(s_restartResumeThread);
-        CloseHandle(s_restartResumeThread);
-        CloseHandle(s_restartResumeProcess);
-        s_restartResumeThread  = NULL;
-        s_restartResumeProcess = NULL;
-    }
 
     ExitProcess((UINT)exitCode);
 }
@@ -2235,17 +2138,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLin
     retro_init();
     CeLog("WinMain: retro_init done");
 
-    /* A non-empty lpCmdLine here means LoadRomFlow()'s dynarec-safe-
-     * restart path (RestartProcess(romPath)) relaunched us with a ROM
-     * path as the *entire* command line - no argv splitting on either
-     * end, this process and the one that spawned it are the only two
-     * parties involved. Load it directly and skip straight to gameplay
-     * instead of blocking on the "No ROM loaded" menu; if that load
-     * fails for some reason, fall back to the normal menu same as a
-     * fresh launch would show. */
+    /* A non-empty lpCmdLine is taken as one ROM path, verbatim (the
+     * *entire* command line - no quoting or argv splitting). Up to
+     * v1.1.1 this was how LoadRomFlow()'s JIT-on ROM switch handed the
+     * new ROM to the relaunched process; nothing in PopGBA passes one
+     * any more, but a launcher still can. Load it directly and skip
+     * straight to gameplay instead of blocking on the "No ROM loaded"
+     * menu; if that load fails for some reason, fall back to the normal
+     * menu same as a fresh launch would show. */
     if (lpCmdLine && lpCmdLine[0] != L'\0')
     {
-        CeLog("WinMain: relaunched with ROM path on command line");
+        CeLog("WinMain: loading ROM path from command line");
         if (LoadRomPath(g_hwnd, lpCmdLine))
         {
             if (!GapiInit(g_hwnd))

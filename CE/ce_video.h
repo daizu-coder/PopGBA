@@ -36,13 +36,6 @@ void CeShowVideoConfigDialog(HWND owner);
 /* Consulted directly by ce_gapi.c's GapiBlitRGB565 every frame. */
 CeScaleMode CeVideoGetScaleMode(void);
 
-/* ce_main.c's LoadRomFlow() checks this to decide whether switching to a
- * different ROM while one is already loaded needs the whole-process
- * restart path (see RestartWithRomPath's comment there) instead of the
- * cheaper in-process unload+load - only needed when the dynarec JIT is
- * (or was) actually active for the running game. */
-int CeVideoIsDynarecEnabled(void);
-
 /* ce_main.c's ce_environment() calls this for RETRO_ENVIRONMENT_GET_VARIABLE:
  * if key is one this module owns (snes9x2002_transparency,
  * snes9x2002_frameskip, snes9x2002_frameskip_interval), fills *outValue

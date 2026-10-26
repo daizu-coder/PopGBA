@@ -195,7 +195,7 @@ static void NavigateUp(void)
  * loose .bin next to your games is almost always gba_bios.bin, GBA ROMs
  * are virtually always .gba, and listing .bin only dragged the BIOS into
  * the ROM list as clutter. .bin still loads fine if handed in directly
- * (command line / dynarec-safe restart), and it has its own dedicated
+ * (on the command line), and it has its own dedicated
  * pick (CE_FILEOPEN_BIOS, FileMatchesPickMode below). No .zip: unlike
  * PicoDrive's cart.c, gpSP has no self-contained zip loader (confirmed by
  * grep - no "zip" references anywhere in libretro.c/main.c), so a .zip
