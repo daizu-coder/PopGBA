@@ -88,6 +88,7 @@ static unsigned     s_coreRate     = 0;  /* last sample rate retro_get_system_av
 static HANDLE       s_audioThread  = NULL;
 static volatile int s_audioRunning = 0;
 static volatile int s_paused       = 0;  /* mirrors ce_main.c's g_paused - see CeAudioSetPaused */
+static volatile int s_startFadeIn  = 0;  /* set by CeAudioResetStream: fade in the next game's first real audio */
 static CeAudioBuffer s_buffers[CE_AUDIO_NUM_BUFFERS];
 
 static int s_volumeLevel = 8;     /* 0..10, matches the reference samples' own default; 0 = silent, replacing the old separate Mute checkbox (ported from an earlier prototype's own Volume 0..10 - see ce_res.rc's IDD_SOUNDCONFIG comment) */
@@ -330,6 +331,22 @@ static DWORD WINAPI CeAudioThreadProc(LPVOID param)
         }
 
         popped = CeAudioPopSamples(monoTemp, CE_AUDIO_BUFFER_FRAMES);
+
+        if (popped > 0 && s_startFadeIn)
+        {
+            /* First real audio of a newly loaded game (CeAudioResetStream):
+             * fade in from zero over 128 samples (~2ms at the native
+             * rate). The ring is still filling at this point, so this
+             * buffer is usually a partial one - the underrun branch below
+             * doesn't fade those in. */
+            unsigned fin = popped < 128 ? popped : 128, k;
+            for (k = 0; k < fin; k++)
+                monoTemp[k] = (int16_t)(((int32_t)monoTemp[k] * (int32_t)(k + 1))
+                                        / (int32_t)fin);
+            s_startFadeIn = 0;
+            s_hadUnderrun = 0;
+        }
+
         if (popped > 0)
             s_lastMono = monoTemp[popped - 1];
 
@@ -559,6 +576,20 @@ static void OpenAudioDevice(void)
 void CeAudioSetPaused(int paused)
 {
     s_paused = paused;
+}
+
+/* See ce_audio.h. waveOut keeps running (closing or resetting it pops on
+ * this device - see CeAudioStop); by the time a ROM switch gets here the
+ * drain thread has long since played the ring out to silence, so the
+ * emptying only guards against a leftover tail. */
+void CeAudioResetStream(void)
+{
+    EnterCriticalSection(&s_ringCs);
+    s_ringRead = s_ringWrite = s_ringUsed = 0;
+    s_resampleAccum = 0;
+    s_resamplePrev  = 0;
+    s_startFadeIn   = 1;
+    LeaveCriticalSection(&s_ringCs);
 }
 
 void CeAudioStart(double sampleRateHz)

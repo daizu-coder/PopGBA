@@ -37,6 +37,13 @@ void GapiBlitRGB565(const void *src, unsigned srcW, unsigned srcH, unsigned srcP
  * the exposed region redrawn. No-op before the first frame. */
 void GapiForceRepaint(void);
 
+/* Forgets the last frame: blacks out the DIB section, so GapiForceRepaint()
+ * paints plain black until the next GapiBlitRGB565(). Call on a ROM switch,
+ * once the previous game is unloaded - otherwise the WM_PAINT that follows
+ * the load re-blits the previous game's last frame before the new game's
+ * first one. No-op before GapiInit(). */
+void GapiClearFrame(void);
+
 /* Last "perf: blit" avg/max (milliseconds) logged by GapiBlitRGB565()'s
  * 60-frame instrumentation, so ce_main.c can fold them into the unified
  * cross-core "perf: retro_run ... blit ..." summary line. Either pointer

@@ -213,6 +213,19 @@ void GapiForceRepaint(void)
     ReleaseDC(s_hwnd, hdc);
 }
 
+/* See ce_gapi.h. Also clears the screenshot image (s_lastImgValid) and
+ * re-clears the border on the next blit (s_geomDirty). */
+void GapiClearFrame(void)
+{
+    if (!s_dibReady)
+        return;
+
+    memset(s_dibBits, 0, (size_t)s_dibPitch * (size_t)s_physH);
+    s_haveFrame    = 0;
+    s_lastImgValid = 0;
+    s_geomDirty    = 1;
+}
+
 void GapiInvalidateLastImage(void)
 {
     s_lastImgValid = 0;

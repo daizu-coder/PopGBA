@@ -770,6 +770,14 @@ static int LoadRomPath(HWND hwnd, const wchar_t *romPath)
          * remap of the ROM area. */
         memory_term();
         init_gamepak_buffer();
+
+        /* Nothing of the previous game may reach the screen or speaker
+         * once the new one starts: the WM_PAINT that follows the load
+         * would re-blit its last frame from the DIB section, and the
+         * resampler would play its last sample first (a click out of
+         * silence). */
+        GapiClearFrame();
+        CeAudioResetStream();
     }
 
     CeShowLoadingScreen(hwnd);

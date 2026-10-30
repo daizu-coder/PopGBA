@@ -57,4 +57,11 @@ void CeAudioGetBufferStatus(int *active, unsigned *occupancyPercent, int *underr
  * investigation). Call from ce_main.c wherever g_paused is set/cleared. */
 void CeAudioSetPaused(int paused);
 
+/* Starts the next game's audio from scratch without touching waveOut:
+ * empties the ring, forgets the resampler's last sample (otherwise the
+ * previous game's last sample is the first one the next game plays, a
+ * one-sample spike out of silence) and fades the first real audio in.
+ * Call on a ROM switch, once the previous game is unloaded. */
+void CeAudioResetStream(void);
+
 #endif
