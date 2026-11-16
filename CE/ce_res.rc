@@ -212,7 +212,7 @@ END
  * CeLogIsEnabled()) as the source of
  * truth and paints box+check itself from WM_DRAWITEM via
  * CeBmpFontDrawOwnerCheckbox(). */
-IDD_VIDEOCONFIG DIALOG 0, 0, 190, 116
+IDD_VIDEOCONFIG DIALOG 0, 0, 190, 136
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Video Config"
 FONT 9, "Tahoma"
@@ -242,7 +242,24 @@ BEGIN
      * (ce_fileopen.c). Debug Log / OK moved up 16 DLU, dialog 132->116. */
     CHECKBOX    "Enable Debug Log", IDC_VC_DEBUGLOG,      8, 74, 174, 12, BS_OWNERDRAW
 
-    DEFPUSHBUTTON "OK",  IDOK,                          70, 92, 50, 14, BS_OWNERDRAW
+    /* Main menu key: caption and key button on one row, laid out like
+     * Frame Skip above (button at x=100, caption 4 below the button's
+     * top) - the same row as PopSNES v1.4.0 (Debug Log is at y=74 in
+     * both). "メインメニューキー:" is 140px in Galmuri14 (English "Main
+     * Menu Key:" 119px) and fits left of the button on PW-G5300 and
+     * PW-SH2 (CeOpener 800x480 and add-on app 480x320) - same layout as
+     * PopSG v1.4.0, checked there on hardware 2026-11-14. The button is
+     * 80 wide so "Press key (5)" fits, and 16 tall (not 14 like the
+     * other buttons): at 14 the descender of the "y" in "Press key" was
+     * cut off on hardware (PopSNES, 2026-11-16) - Galmuri14's descenders
+     * reach 2 rows below the 16px cell, likely onto the XOR focus
+     * rectangle or past the button's bottom edge. Its center is y=96.
+     * OK moved down 20 (92 -> 112) and the dialog grew 116 -> 136,
+     * inside IDD_MAINMENU's 210x154. */
+    LTEXT       "Main Menu Key:", IDC_VC_LBL_MENUKEY,     8, 92,  90, 12
+    PUSHBUTTON  "None",         IDC_VC_MENUKEY,         100, 88,  80, 16, WS_TABSTOP | BS_OWNERDRAW
+
+    DEFPUSHBUTTON "OK",  IDOK,                          70, 112, 50, 14, BS_OWNERDRAW
 END
 
 /* Custom ROM picker (see ce_fileopen.c) - replaces GetOpenFileNameW().

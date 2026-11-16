@@ -36,6 +36,11 @@ void CeShowVideoConfigDialog(HWND owner);
 /* Consulted directly by ce_gapi.c's GapiBlitRGB565 every frame. */
 CeScaleMode CeVideoGetScaleMode(void);
 
+/* Video Config's main menu key: the VK code of the key that opens the
+ * main menu during play (ce_main.c), 0 = none (the default). Saved as
+ * "VideoMenuKey". */
+int CeVideoGetMenuKey(void);
+
 /* ce_main.c's ce_environment() calls this for RETRO_ENVIRONMENT_GET_VARIABLE:
  * if key is one this module owns (snes9x2002_transparency,
  * snes9x2002_frameskip, snes9x2002_frameskip_interval), fills *outValue
